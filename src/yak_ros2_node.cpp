@@ -1,5 +1,8 @@
 #include <rclcpp/rclcpp.hpp>
 
+#include <yak/yak_server.h>
+#include <yak/mc/marching_cubes.h>
+
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_eigen/tf2_eigen.h>
@@ -9,9 +12,6 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <std_srvs/srv/trigger.hpp>
-
-#include <yak/yak_server.h>
-#include <yak/mc/marching_cubes.h>
 
 #include <pcl/io/ply_io.h>
 

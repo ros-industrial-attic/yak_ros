@@ -19,7 +19,6 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(cv_bridge REQUIRED)
 
-find_package(gl_depth_sim REQUIRED)
 
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS core highgui)
@@ -27,6 +26,8 @@ find_package(OpenCV REQUIRED COMPONENTS core highgui)
 
 if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
     # Build for ROS 1 using Catkin
+    find_package(gl_depth_sim REQUIRED)
+
      find_package(catkin REQUIRED COMPONENTS
          roscpp
          tf2
@@ -35,7 +36,6 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
 
      catkin_package(
        INCLUDE_DIRS
-         ${yak_INCLUDE_DIRS}
        LIBRARIES
          ${OpenCV_LIBS}
          ${yak_LIBRARIES}
@@ -77,6 +77,12 @@ else()
 
     add_executable(${PROJECT_NAME}_node
         src/yak_ros2_node.cpp)
+
+    target_include_directories(${PROJECT_NAME}_node PUBLIC
+      ${rclcpp_INCLUDE_DIRS}
+      ${yak_INCLUDE_DIRS}
+    )
+
     target_link_libraries(${PROJECT_NAME}_node
         ${rclcpp_LIBRARIES}
         ${OpenCV_LIBS}
@@ -99,10 +105,9 @@ else()
                               "tf2_eigen"
                               )
 
-    ament_export_include_directories(include
-                                    ${rclcpp_INCLUDE_DIRS}
-                                    ${yak_INCLUDE_DIRS}
-                                    )
+    ament_export_include_directories(${rclcpp_INCLUDE_DIRS}
+                                     ${yak_INCLUDE_DIRS}
+                                     )
 
     ament_export_dependencies(rclcpp yak tf2_eigen tf2)
 
