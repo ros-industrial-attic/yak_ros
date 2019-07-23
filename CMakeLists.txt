@@ -122,12 +122,6 @@ else()
     set(ROS_BIN_DESTINATION bin)
 endif()
 
-set(ROS_INCLUDE_DESTINATION include)
-
-install(DIRECTORY include/${PROJECT_NAME}
-  DESTINATION ${ROS_INCLUDE_DESTINATION}
-)
-
 install(TARGETS ${PROJECT_NAME}_node
         RUNTIME DESTINATION ${ROS_LIB_DESTINATION}
         )
