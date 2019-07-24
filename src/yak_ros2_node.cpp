@@ -88,6 +88,7 @@ public:
 
     depth_image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(depth_topic, depth_image_cb);
 
+    // Advertise service for marching cubes meshing.
     auto generate_mesh_cb =
             [this](const std::shared_ptr<rmw_request_id_t> request_header,
             const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
@@ -101,20 +102,30 @@ public:
         pcl::io::savePLYFileBinary("cubes.ply", mesh);
         RCLCPP_INFO(node_->get_logger(), "Saving done");
     };
-
-    // Advertise service for marching cubes meshing
     generate_mesh_service_ = node_->create_service<std_srvs::srv::Trigger>("generate_mesh_service", generate_mesh_cb);
 
+    // Advertise service for clearing the voxels.
+    auto clear_volume_cb =
+            [this](const std::shared_ptr<rmw_request_id_t> request_header,
+            const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+            std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> void
+    {
+        RCLCPP_INFO(node_->get_logger(), "Clearing the volume");
+        res->success = fusion_.reset();
+    };
+    clear_volume_service_ = node_->create_service<std_srvs::srv::Trigger>("clear_volume_service", clear_volume_cb);
+
+    // Advertise service for resetting the volume.
+    // Ideally the service request would contain new parameters to reinitialize the volume.
     auto reset_volume_cb =
             [this](const std::shared_ptr<rmw_request_id_t> request_header,
             const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
             std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> void
     {
-        RCLCPP_INFO(node_->get_logger(), "Resetting the volume");
-        res->success = fusion_.reset();
+        RCLCPP_INFO(node_->get_logger(), "Resetting the volume with new(ish) params");
+        res->success = fusion_.resetWithNewParams(params_);
     };
-
-    reset_volume_service_ = node_->create_service<std_srvs::srv::Trigger>("reset_volume_service", reset_volume_cb);
+    reset_params_volume_service_=  node_->create_service<std_srvs::srv::Trigger>("reset_volume_params_service", reset_volume_cb);
 
   }
 
@@ -123,7 +134,8 @@ private:
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr depth_image_sub_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr generate_mesh_service_;
-  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_volume_service_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr clear_volume_service_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_params_volume_service_;
 
   std::string tsdf_base_frame_;
   tf2_ros::Buffer tf_buffer_;
