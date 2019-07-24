@@ -44,6 +44,10 @@ public:
 
     // Advertise service for marching cubes meshing
     generate_mesh_service_ = nh.advertiseService("generate_mesh_service", &OnlineFusionServer::onGenerateMesh, this);
+
+    // Advertise service for clearing the contents of the voxel volume
+    reset_volume_service_ = nh.advertiseService("reset_volume_service", &OnlineFusionServer::onResetVolume, this);
+
   }
 
 private:
@@ -107,10 +111,19 @@ private:
     return true;
   }
 
+  bool onResetVolume(std_srvs::TriggerRequest &req, std_srvs::TriggerResponse &res)
+  {
+    ROS_INFO_STREAM("Reseting volume");
+    res.success = fusion_.reset();;
+    return true;
+  }
+
+
   ros::Subscriber point_cloud_sub_;
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener robot_tform_listener_;
   ros::ServiceServer generate_mesh_service_;
+  ros::ServiceServer reset_volume_service_;
   yak::FusionServer fusion_;
   const kfusion::KinFuParams params_;
   Eigen::Affine3d world_to_camera_prev_;

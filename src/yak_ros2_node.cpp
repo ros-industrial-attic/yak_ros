@@ -25,7 +25,6 @@ static const std::double_t DEFAULT_MINIMUM_TRANSLATION = 0.00001;
 class Fusion
 {
 public:
-
   /**
    * @brief OnlineFusionServer constructor
    * @param nh - ROS node handle
@@ -105,6 +104,18 @@ public:
 
     // Advertise service for marching cubes meshing
     generate_mesh_service_ = node_->create_service<std_srvs::srv::Trigger>("generate_mesh_service", generate_mesh_cb);
+
+    auto reset_volume_cb =
+            [this](const std::shared_ptr<rmw_request_id_t> request_header,
+            const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+            std::shared_ptr<std_srvs::srv::Trigger::Response> res) -> void
+    {
+        RCLCPP_INFO(node_->get_logger(), "Resetting the volume");
+        res->success = fusion_.reset();
+    };
+
+    reset_volume_service_ = node_->create_service<std_srvs::srv::Trigger>("reset_volume_service", reset_volume_cb);
+
   }
 
 private:
@@ -112,6 +123,7 @@ private:
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr depth_image_sub_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr generate_mesh_service_;
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr reset_volume_service_;
 
   std::string tsdf_base_frame_;
   tf2_ros::Buffer tf_buffer_;
@@ -120,6 +132,9 @@ private:
   yak::FusionServer fusion_;
   const kfusion::KinFuParams params_;
   Eigen::Affine3d world_to_camera_prev_;
+
+public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 int main(int argc, char * argv[])
@@ -168,7 +183,7 @@ int main(int argc, char * argv[])
 
     RCLCPP_INFO(node->get_logger(), "Starting fusion node");
 
-    auto fusion = std::make_shared<Fusion>(node, default_params, world_to_volume, tsdf_base_frame);
+    Fusion fusion(node, default_params, world_to_volume, tsdf_base_frame);
 
     rclcpp::spin(node);
     rclcpp::shutdown();
