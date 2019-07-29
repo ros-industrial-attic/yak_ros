@@ -56,17 +56,18 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
      target_link_libraries(${PROJECT_NAME}_node
          ${CATKIN_LIBRARIES}
          ${OpenCV_LIBS}
-         ${yak_LIBRARIES}
          ${sensor_msgs_LIBRARIES}
          ${tf2_LIBRARIES}
          ${tf2_ros_LIBRARIES}
          ${tf2_eigen_LIBRARIES}
          ${cv_bridge_LIBRARIES}
+         yak::yak
+         yak::yak_frontend
+         yak::yak_marching_cubes
          )
 
      target_include_directories(${PROJECT_NAME}_node PUBLIC
        ${catkin_INCLUDE_DIRS}
-       ${yak_INCLUDE_DIRS}
        ${gl_depth_sim_INCLUDE_DIRS}
      )
 
@@ -80,13 +81,14 @@ else()
 
     target_include_directories(${PROJECT_NAME}_node PUBLIC
       ${rclcpp_INCLUDE_DIRS}
-      ${yak_INCLUDE_DIRS}
     )
 
     target_link_libraries(${PROJECT_NAME}_node
         ${rclcpp_LIBRARIES}
         ${OpenCV_LIBS}
-        ${yak_LIBRARIES}
+        yak::yak
+        yak::yak_frontend
+        yak::yak_marching_cubes
         ${sensor_msgs_LIBRARIES}
         ${tf2_LIBRARIES}
         ${tf2_ros_LIBRARIES}
