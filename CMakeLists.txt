@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(yak_ros)
+project(yak_ros VERSION 0.1.0 LANGUAGES CXX)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
@@ -19,16 +19,14 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(cv_bridge REQUIRED)
 
-
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS core highgui)
 
-
 if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
-    # Build for ROS 1 using Catkin
+    # Build as a Catkin package for ROS
     find_package(gl_depth_sim REQUIRED)
 
-     find_package(catkin REQUIRED COMPONENTS
+    find_package(catkin REQUIRED COMPONENTS
          roscpp
          tf2
          tf2_eigen
@@ -48,8 +46,7 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
        DEPENDS
          yak
          tf2_eigen
-         tf2
-     )
+         tf2)
 
      add_executable(${PROJECT_NAME}_node
          src/yak_ros1_node.cpp)
@@ -63,16 +60,13 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
          ${cv_bridge_LIBRARIES}
          yak::yak
          yak::yak_frontend
-         yak::yak_marching_cubes
-         )
-
+         yak::yak_marching_cubes)
      target_include_directories(${PROJECT_NAME}_node PUBLIC
        ${catkin_INCLUDE_DIRS}
-       ${gl_depth_sim_INCLUDE_DIRS}
-     )
+       ${gl_depth_sim_INCLUDE_DIRS})
 
 else()
-    # Build for ROS 2 using Ament
+    # Build as an Ament package for ROS2
     find_package(ament_cmake REQUIRED)
     find_package(rclcpp REQUIRED)
 
@@ -80,8 +74,7 @@ else()
         src/yak_ros2_node.cpp)
 
     target_include_directories(${PROJECT_NAME}_node PUBLIC
-      ${rclcpp_INCLUDE_DIRS}
-    )
+      ${rclcpp_INCLUDE_DIRS})
 
     target_link_libraries(${PROJECT_NAME}_node
         ${rclcpp_LIBRARIES}
@@ -93,8 +86,7 @@ else()
         ${tf2_LIBRARIES}
         ${tf2_ros_LIBRARIES}
         ${tf2_eigen_LIBRARIES}
-        ${cv_bridge_LIBRARIES}
-    )
+        ${cv_bridge_LIBRARIES})
 
     ament_target_dependencies(${PROJECT_NAME}_node
                               "rclcpp"
@@ -104,12 +96,10 @@ else()
                               "geometry_msgs"
                               "tf2"
                               "tf2_ros"
-                              "tf2_eigen"
-                              )
+                              "tf2_eigen")
 
     ament_export_include_directories(${rclcpp_INCLUDE_DIRS}
-                                     ${yak_INCLUDE_DIRS}
-                                     )
+                                     ${yak_INCLUDE_DIRS})
 
     ament_export_dependencies(rclcpp yak tf2_eigen tf2)
 
@@ -118,17 +108,9 @@ endif()
 
 if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
     set(ROS_LIB_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
-    set(ROS_BIN_DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 else()
-    set(ROS_LIB_DESTINATION lib)
-    set(ROS_BIN_DESTINATION bin)
+    set(ROS_LIB_DESTINATION lib/${PROJECT_NAME})
 endif()
-
-set(ROS_INCLUDE_DESTINATION include)
-
-install(DIRECTORY include/${PROJECT_NAME}
-  DESTINATION ${ROS_INCLUDE_DESTINATION}
-)
 
 install(TARGETS ${PROJECT_NAME}_node
         RUNTIME DESTINATION ${ROS_LIB_DESTINATION}
