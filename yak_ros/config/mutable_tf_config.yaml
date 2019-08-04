@@ -1,0 +1,9 @@
+- qy: 0
+  z: -0.25
+  x: -0.25
+  y: -0.25
+  parent: world
+  qx: 0
+  qw: 1
+  qz: 0
+  child: tsdf_origin

@@ -23,11 +23,16 @@
 
   <depend>sensor_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>std_msgs</depend>
   <depend>std_srvs</depend>
 
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
   <depend>tf2_eigen</depend>
+
+  <depend>cv_bridge</depend>
+  <depend condition="$BUILD_DEMO == True">gl_depth_sim</depend>
+  <depend condition="$BUILD_DEMO == True">image_transport</depend>
 
   <export>
     <build_type condition="$ROS_VERSION == 1">catkin</build_type>
