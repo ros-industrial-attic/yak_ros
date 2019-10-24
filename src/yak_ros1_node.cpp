@@ -3,8 +3,6 @@
 #include <yak/yak_server.h>
 #include <yak/mc/marching_cubes.h>
 
-#include <gl_depth_sim/interfaces/opencv_interface.h>
-
 #include <pcl_ros/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/io/ply_io.h>
