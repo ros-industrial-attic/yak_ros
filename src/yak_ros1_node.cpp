@@ -41,7 +41,10 @@ public:
     depth_image_raw_sub_ = nh.subscribe("input_depth_image", 1, &OnlineFusionServer::onReceivedDepthImg, this);
 
     // Advertise service for marching cubes meshing
-    generate_mesh_service_ = nh.advertiseService("generate_mesh_service", &OnlineFusionServer::onGenerateMesh, this);
+    generate_mesh_service_ = nh.advertiseService("generate_mesh", &OnlineFusionServer::onGenerateMesh, this);
+
+    // Advertise service to reset tsdf volume
+    reset_tsdf_service_ = nh.advertiseService("reset_tsdf", &OnlineFusionServer::onReset, this);
   }
 
 private:
@@ -106,6 +109,29 @@ private:
     ROS_INFO_STREAM("Saving done");
     res.success = true;
     return true;
+  }
+
+  /**
+   * @brief Resets the tsdf volume
+   * @param req
+   * @param res
+   * @return
+   * Returns true if successful
+   */
+  bool onReset(std_srvs::TriggerRequest& req, std_srvs::TriggerResponse& res)
+  {
+    if (fusion_.reset())
+    {
+      ROS_INFO_STREAM("TSDF volume has been reset");
+      res.success = true;
+      return true;
+    }
+    else
+    {
+      ROS_ERROR_STREAM("TSDF volume has not been reset");
+      res.success = false;
+      return false;
+    }
   }
 
   yak::FusionServer fusion_;
