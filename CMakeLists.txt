@@ -26,7 +26,6 @@ find_package(OpenCV REQUIRED COMPONENTS core highgui)
 
 if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
     # Build for ROS 1 using Catkin
-    find_package(gl_depth_sim REQUIRED)
 
      find_package(catkin REQUIRED COMPONENTS
          roscpp
