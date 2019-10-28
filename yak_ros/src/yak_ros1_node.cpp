@@ -171,7 +171,7 @@ int main(int argc, char** argv)
 
   // Get camera intrinsics from params
   XmlRpc::XmlRpcValue camera_matrix;
-  pnh.getParam("camera/camera_matrix/data", camera_matrix);
+  pnh.getParam("camera_matrix", camera_matrix);
   default_params.intr.fx = static_cast<double>(camera_matrix[0]);
   default_params.intr.fy = static_cast<double>(camera_matrix[4]);
   default_params.intr.cx = static_cast<double>(camera_matrix[2]);
