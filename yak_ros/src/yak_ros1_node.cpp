@@ -6,6 +6,7 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/io/ply_io.h>
+#include <pcl/common/transforms.h>
 
 #include <sensor_msgs/PointCloud2.h>
 #include <tf2_ros/transform_listener.h>
@@ -85,14 +86,27 @@ void OnlineFusionServer::onReceivedDepthImg(const sensor_msgs::ImageConstPtr& im
   return;
 }
 
-bool OnlineFusionServer::onGenerateMesh(std_srvs::TriggerRequest& req, std_srvs::TriggerResponse& res)
+bool OnlineFusionServer::onGenerateMesh(yak_ros_msgs::GenerateMeshRequest& req, yak_ros_msgs::GenerateMeshResponse& res)
 {
-  (void)req;
+  // Run marching cubes to mesh TSDF
+  ROS_INFO_STREAM("Beginning marching cubes meshing");
   yak::MarchingCubesParameters mc_params;
   mc_params.scale = static_cast<double>(params_.volume_resolution);
   pcl::PolygonMesh mesh = yak::marchingCubesCPU(fusion_.downloadTSDF(), mc_params);
-  ROS_INFO_STREAM("Meshing done, saving ply");
-  pcl::io::savePLYFileBinary("cubes.ply", mesh);
+  mesh.header.frame_id = tsdf_frame_;
+  pcl_conversions::toPCL(ros::Time::now(), mesh.header.stamp);
+
+  // Convert the results to the correct frame
+  if (req.results_frame == "")
+    req.results_frame = tsdf_frame_;
+  transformPolygonMesh(mesh, req.results_frame);
+
+  // Save the results to the appropriate directory
+  std::string filename = req.results_dir + "results_mesh.ply";
+  res.results_path = filename;
+  ROS_INFO_STREAM("Meshing done, saving ply as");
+  pcl::io::savePLYFileBinary(filename, mesh);
+
   ROS_INFO_STREAM("Saving done");
   res.success = true;
   return true;
@@ -137,6 +151,33 @@ bool OnlineFusionServer::onUpdateParams(yak_ros_msgs::UpdateKinFuParamsRequest& 
     res.success = true;
     return true;
   }
+}
+
+bool OnlineFusionServer::transformPolygonMesh(pcl::PolygonMesh& input_mesh, const std::string& target_frame)
+{
+  if (!tf_buffer_._frameExists(input_mesh.header.frame_id))
+  {
+    ROS_ERROR("Input mesh frame does not exist");
+    return false;
+  }
+  if (!tf_buffer_._frameExists(target_frame))
+  {
+    ROS_ERROR("Target frame does not exist");
+    return false;
+  }
+
+  // Get tranform from current mesh frame to target frame
+  ros::Time stamp;
+  pcl_conversions::fromPCL(input_mesh.header.stamp, stamp);
+  auto tsdf_to_target_tf = tf_buffer_.lookupTransform(target_frame, input_mesh.header.frame_id, stamp);
+  Eigen::Affine3d tsdf_to_target = tf2::transformToEigen(tsdf_to_target_tf);
+
+  // Tranform the point cloud to the correct frame
+  pcl::PointCloud<pcl::PointXYZ> cloud;
+  pcl::fromPCLPointCloud2(input_mesh.cloud, cloud);
+  pcl::transformPointCloud(cloud, cloud, tsdf_to_target);
+  pcl::toPCLPointCloud2(cloud, input_mesh.cloud);
+  input_mesh.header.frame_id = target_frame;
 }
 
 /**

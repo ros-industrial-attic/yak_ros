@@ -29,11 +29,13 @@
 
 #include <ros/ros.h>
 #include <tf2_ros/transform_listener.h>
+#include <pcl/PolygonMesh.h>
 
 #include <yak/yak_server.h>
 
 #include <std_srvs/Trigger.h>
 #include <sensor_msgs/Image.h>
+#include <yak_ros_msgs/GenerateMesh.h>
 #include <yak_ros_msgs/UpdateKinFuParams.h>
 
 namespace yak_ros
@@ -63,11 +65,11 @@ private:
   /**
    * @brief onGenerateMesh - Perform marching cubes meshing on the TSDF volume and save the result as a binary .ply
    * file.
-   * @param req
-   * @param res
-   * @return
+   * @param req Service request argument
+   * @param req Service response argument
+   * @return Returns true if successful
    */
-  bool onGenerateMesh(std_srvs::TriggerRequest& req, std_srvs::TriggerResponse& res);
+  bool onGenerateMesh(yak_ros_msgs::GenerateMeshRequest& req, yak_ros_msgs::GenerateMeshResponse& res);
 
   /**
    * @brief Resets the tsdf volume
@@ -84,6 +86,14 @@ private:
    * @return Returns true if successful
    */
   bool onUpdateParams(yak_ros_msgs::UpdateKinFuParamsRequest& req, yak_ros_msgs::UpdateKinFuParamsResponse& res);
+
+  /**
+   * @brief Transforms a pcl::PolygonMesh into a new frame
+   * @param input_mesh Mesh to be converted. Header must contain the current frame
+   * @param target_frame Desired frame
+   * @return Returns true if successful
+   */
+  bool transformPolygonMesh(pcl::PolygonMesh& input_mesh, const std::string& target_frame);
 
   /** @brief The fusion server that does the TSDF integration */
   yak::FusionServer fusion_;

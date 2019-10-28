@@ -1,0 +1,9 @@
+# Directory to which the mesh will be saved
+string results_dir
+# TF frame in which the mesh should be saved
+string results_frame
+
+---
+bool success
+# Path to the saved mesh
+string results_path
