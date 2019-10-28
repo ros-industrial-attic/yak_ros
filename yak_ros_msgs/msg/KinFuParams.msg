@@ -11,7 +11,7 @@ int32[] volume_dims
 # Resolution of the TSDF volume voxels (meters/voxel)
 float32 volume_resolution
 
-# Static tranform applied to the volume
+# Static tranform applied to the volume. Not currently supported.
 geometry_msgs/Pose volume_pose
 
 # Pixels
@@ -43,7 +43,7 @@ float32 raycast_step_factor
 float32 gradient_delta_factor
 
 # Meters - Should be length 3
-float32 light_pose
+float32[] light_pose
 
 # If true use the pose given from an external source (e.g. robot kinematics)
 bool use_pose_hints

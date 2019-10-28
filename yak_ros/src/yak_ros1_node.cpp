@@ -13,6 +13,8 @@
 #include <cv_bridge/cv_bridge.h>
 
 #include <std_srvs/Trigger.h>
+#include <yak_ros_msgs/UpdateKinFuParams.h>
+#include <yak_ros/utils.h>
 
 static const std::double_t DEFAULT_MINIMUM_TRANSLATION = 0.00001;
 
@@ -45,6 +47,9 @@ public:
 
     // Advertise service to reset tsdf volume
     reset_tsdf_service_ = nh.advertiseService("reset_tsdf", &OnlineFusionServer::onReset, this);
+
+    // Advertise service to update the params
+    reset_tsdf_service_ = nh.advertiseService("update_params", &OnlineFusionServer::onUpdateParams, this);
   }
 
 private:
@@ -102,7 +107,7 @@ private:
   bool onGenerateMesh(std_srvs::TriggerRequest& req, std_srvs::TriggerResponse& res)
   {
     yak::MarchingCubesParameters mc_params;
-    mc_params.scale = params_.volume_resolution;
+    mc_params.scale = static_cast<double>(params_.volume_resolution);
     pcl::PolygonMesh mesh = yak::marchingCubesCPU(fusion_.downloadTSDF(), mc_params);
     ROS_INFO_STREAM("Meshing done, saving ply");
     pcl::io::savePLYFileBinary("cubes.ply", mesh);
@@ -113,10 +118,9 @@ private:
 
   /**
    * @brief Resets the tsdf volume
-   * @param req
-   * @param res
-   * @return
-   * Returns true if successful
+   * @param req Service request argument
+   * @param res Service response argument
+   * @return Returns true if successful
    */
   bool onReset(std_srvs::TriggerRequest& req, std_srvs::TriggerResponse& res)
   {
@@ -134,8 +138,37 @@ private:
     }
   }
 
+  /**
+   * @brief Updates the KinFu params and also resets the TSDF volume
+   * @param req Service request argument
+   * @param res Service response argument
+   * @return Returns true if successful
+   */
+  bool onUpdateParams(yak_ros_msgs::UpdateKinFuParamsRequest& req, yak_ros_msgs::UpdateKinFuParamsResponse& res)
+  {
+    if (!yak_ros::updateParams(params_, req))
+    {
+      ROS_ERROR_STREAM("Update KinFuParams failed. TSDF volume has not been reset.");
+      res.success = false;
+      return false;
+    }
+    if (!fusion_.resetWithNewParams(params_))
+    {
+      ROS_ERROR_STREAM("Resetting Fusion Server Failed.");
+      res.success = false;
+      return false;
+    }
+    else
+    {
+      ROS_INFO_STREAM("TSDF volume has been reset and " << req.params_to_update.size()
+                                                        << " parameters have been updated.");
+      res.success = true;
+      return true;
+    }
+  }
+
   yak::FusionServer fusion_;
-  const kfusion::KinFuParams params_;
+  kfusion::KinFuParams params_;
 
   /** @brief Subscriber that listens to incoming unrectofied depth images */
   ros::Subscriber depth_image_raw_sub_;
@@ -147,6 +180,8 @@ private:
   ros::ServiceServer generate_mesh_service_;
   /** @brief Service that resets the tsdf volue */
   ros::ServiceServer reset_tsdf_service_;
+  /** @brief Service that updates the KinFuParams and resets the TSDF volume */
+  ros::ServiceServer update_params_service_;
   /** @brief Used to track if the camera has moved. Only add image if it has */
   Eigen::Affine3d tsdf_frame_to_camera_prev_;
   /** @brief TF frame associated with the TSDF volume. */
