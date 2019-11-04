@@ -43,7 +43,7 @@ OnlineFusionServer::OnlineFusionServer(ros::NodeHandle& nh,
   reset_tsdf_service_ = nh.advertiseService("reset_tsdf", &OnlineFusionServer::onReset, this);
 
   // Advertise service to update the params
-  reset_tsdf_service_ = nh.advertiseService("update_params", &OnlineFusionServer::onUpdateParams, this);
+  update_params_service_ = nh.advertiseService("update_params", &OnlineFusionServer::onUpdateParams, this);
 }
 
 void OnlineFusionServer::onReceivedDepthImg(const sensor_msgs::ImageConstPtr& image_in)
@@ -102,7 +102,7 @@ bool OnlineFusionServer::onGenerateMesh(yak_ros_msgs::GenerateMeshRequest& req, 
   transformPolygonMesh(mesh, req.results_frame);
 
   // Save the results to the appropriate directory
-  std::string filename = req.results_dir + "results_mesh.ply";
+  std::string filename = req.results_dir + "/results_mesh.ply";
   res.results_path = filename;
   ROS_INFO_STREAM("Meshing done, saving ply as");
   pcl::io::savePLYFileBinary(filename, mesh);
