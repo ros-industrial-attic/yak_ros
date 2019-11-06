@@ -191,48 +191,65 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "tsdf_node");
   ros::NodeHandle pnh("~");
 
-  kfusion::KinFuParams default_params = kfusion::KinFuParams::default_params();
-  default_params.use_pose_hints = true;  // use robot forward kinematics to find camera pose relative to TSDF volume
-  default_params.use_icp = false;  // since we're using robot FK to get the camera pose, don't use ICP (TODO: yet!)
-  pnh.param<bool>("update_via_sensor_motion", default_params.update_via_sensor_motion, false);
+  kfusion::KinFuParams kinfu_params = kfusion::KinFuParams::default_params();
+
+  // Size of the input image
+  pnh.param<int>("cols", kinfu_params.cols, 640);
+  pnh.param<int>("rows", kinfu_params.rows, 480);
 
   // Get camera intrinsics from params
   XmlRpc::XmlRpcValue camera_matrix;
   pnh.getParam("camera_matrix", camera_matrix);
-  default_params.intr.fx = static_cast<float>(static_cast<double>(camera_matrix[0]));
-  default_params.intr.fy = static_cast<float>(static_cast<double>(camera_matrix[4]));
-  default_params.intr.cx = static_cast<float>(static_cast<double>(camera_matrix[2]));
-  default_params.intr.cy = static_cast<float>(static_cast<double>(camera_matrix[5]));
-
+  kinfu_params.intr.fx = static_cast<float>(static_cast<double>(camera_matrix[0]));
+  kinfu_params.intr.fy = static_cast<float>(static_cast<double>(camera_matrix[4]));
+  kinfu_params.intr.cx = static_cast<float>(static_cast<double>(camera_matrix[2]));
+  kinfu_params.intr.cy = static_cast<float>(static_cast<double>(camera_matrix[5]));
   ROS_INFO("Camera Intr Params: %f %f %f %f\n",
-           static_cast<double>(default_params.intr.fx),
-           static_cast<double>(default_params.intr.fy),
-           static_cast<double>(default_params.intr.cx),
-           static_cast<double>(default_params.intr.cy));
+           static_cast<double>(kinfu_params.intr.fx),
+           static_cast<double>(kinfu_params.intr.fy),
+           static_cast<double>(kinfu_params.intr.cx),
+           static_cast<double>(kinfu_params.intr.cy));
 
-  // Set up TSDF parameters
+  // Volume Dimensions - Must be multiples of 32
   // TODO: Autocompute resolution from volume length/width/height in meters
   int volume_x, volume_y, volume_z;
   pnh.param<int>("volume_x", volume_x, 640);
   pnh.param<int>("volume_y", volume_y, 640);
   pnh.param<int>("volume_z", volume_z, 640);
-  pnh.param<float>("volume_resolution", default_params.volume_resolution, 0.002f);
-  default_params.volume_dims = cv::Vec3i(volume_x, volume_y, volume_z);
-  ROS_INFO_STREAM("TSDF Volume Dimensions (Voxels): " << default_params.volume_dims);
+  pnh.param<float>("volume_resolution", kinfu_params.volume_resolution, 0.002f);
+  kinfu_params.volume_dims = cv::Vec3i(volume_x, volume_y, volume_z);
+  ROS_INFO_STREAM("TSDF Volume Dimensions (Voxels): " << kinfu_params.volume_dims);
 
-  default_params.volume_pose =
-      Eigen::Affine3f::Identity();  // This is not settable via ROS. Change by moving TSDF frame
-  pnh.param<float>(
-      "tsdf_trunc_dist", default_params.tsdf_trunc_dist, default_params.volume_resolution * 5.0f);  // meters;
-  pnh.param<int>("tsdf_max_weight", default_params.tsdf_max_weight, 50);                            // frames
-  pnh.param<float>("raycast_step_factor", default_params.raycast_step_factor, 0.25);                // in voxel sizes
-  pnh.param<float>("gradient_delta_factor", default_params.gradient_delta_factor, 0.25);            // in voxel sizes
-
+  // This is not settable via ROS. Change by moving TSDF frame in TF
+  kinfu_params.volume_pose = Eigen::Affine3f::Identity();
   std::string tsdf_frame;
   pnh.param<std::string>("tsdf_frame", tsdf_frame, "tsdf_frame");
 
+  // Other parameters
+  pnh.param<float>("bilateral_sigma_depth", kinfu_params.bilateral_sigma_depth, 0.04f);
+  pnh.param<float>("bilateral_sigma_spatial", kinfu_params.bilateral_sigma_spatial, 4.5f);
+  pnh.param<int>("bilateral_kernal_size", kinfu_params.bilateral_kernel_size, 7);
+
+  // This is the internal tsdf min camera movement, not the one implemented in this node (See
+  // DEFAULT_MINIMUM_TRANSLATION)
+  pnh.param<float>("tsdf_min_camera_movement", kinfu_params.tsdf_min_camera_movement, 0.f);
+
+  pnh.param<float>("tsdf_trunc_dist", kinfu_params.tsdf_trunc_dist, kinfu_params.volume_resolution * 5.0f);  // meters;
+  pnh.param<int>("tsdf_max_weight", kinfu_params.tsdf_max_weight, 50);                                       // frames
+  pnh.param<float>("raycast_step_factor", kinfu_params.raycast_step_factor, 0.25);      // in voxel sizes
+  pnh.param<float>("gradient_delta_factor", kinfu_params.gradient_delta_factor, 0.25);  // in voxel sizes
+  float light_pose_x, light_pose_y, light_pose_z;
+  pnh.param<float>("light_pose_x", light_pose_x, 0.f);
+  pnh.param<float>("light_pose_y", light_pose_y, 0.f);
+  pnh.param<float>("light_pose_z", light_pose_z, 0.f);
+  kinfu_params.light_pose = cv::Vec3f(light_pose_x, light_pose_y, light_pose_z);
+
+  kinfu_params.use_pose_hints = true;  // use robot forward kinematics to find camera pose relative to TSDF volume
+  kinfu_params.use_icp = false;        // since we're using robot FK to get the camera pose, don't use ICP (TODO: yet!)
+  pnh.param<bool>("update_via_sensor_motion", kinfu_params.update_via_sensor_motion, false);
+
   // Set up the fusion server with the above parameters;
-  OnlineFusionServer ofs(pnh, default_params, tsdf_frame);
+  OnlineFusionServer ofs(pnh, kinfu_params, tsdf_frame);
 
   ros::spin();
   return 0;
