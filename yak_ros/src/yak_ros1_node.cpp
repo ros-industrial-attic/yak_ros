@@ -49,7 +49,7 @@ OnlineFusionServer::OnlineFusionServer(ros::NodeHandle& nh,
 void OnlineFusionServer::onReceivedDepthImg(const sensor_msgs::ImageConstPtr& image_in)
 {
   // Get the camera pose in the world frame at the time when the depth image was generated.
-  ROS_INFO_STREAM("Got depth image");
+  ROS_DEBUG_STREAM("Got depth image");
   geometry_msgs::TransformStamped transform_tsdf_frame_to_camera;
   try
   {
@@ -68,10 +68,10 @@ void OnlineFusionServer::onReceivedDepthImg(const sensor_msgs::ImageConstPtr& im
   // abort integration. This is to prevent noise from accumulating in the isosurface due to numerous observations from
   // the same pose.
   std::double_t motion_mag = (tsdf_frame_to_camera.inverse() * tsdf_frame_to_camera_prev_).translation().norm();
-  ROS_INFO_STREAM(motion_mag);
+  ROS_DEBUG_STREAM(motion_mag);
   if (motion_mag < DEFAULT_MINIMUM_TRANSLATION)
   {
-    ROS_INFO_STREAM("Camera motion below threshold");
+    ROS_DEBUG_STREAM("Camera motion below threshold");
     return;
   }
 
@@ -218,6 +218,7 @@ int main(int argc, char** argv)
   pnh.param<int>("volume_z", volume_z, 640);
   pnh.param<float>("volume_resolution", default_params.volume_resolution, 0.002f);
   default_params.volume_dims = cv::Vec3i(volume_x, volume_y, volume_z);
+  ROS_INFO_STREAM("TSDF Volume Dimensions (Voxels): " << default_params.volume_dims);
 
   default_params.volume_pose =
       Eigen::Affine3f::Identity();  // This is not settable via ROS. Change by moving TSDF frame
