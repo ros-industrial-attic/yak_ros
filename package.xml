@@ -17,7 +17,8 @@
 
   <depend>libpcl-all-dev</depend>
   <depend>OpenMP</depend>
-  <depend>Eigen3</depend>
+  <depend>eigen</depend>
+  <depend>libopencv-dev</depend>
   <depend>yak</depend>
 
   <depend>sensor_msgs</depend>
