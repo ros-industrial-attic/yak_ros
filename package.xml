@@ -16,7 +16,6 @@
 
 
   <depend>libpcl-all-dev</depend>
-  <depend>OpenMP</depend>
   <depend>eigen</depend>
   <depend>libopencv-dev</depend>
   <depend>yak</depend>
