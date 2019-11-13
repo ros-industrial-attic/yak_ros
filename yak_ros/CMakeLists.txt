@@ -24,7 +24,6 @@ find_package(OpenCV REQUIRED COMPONENTS core highgui)
 
 if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
     # Build as a Catkin package for ROS
-    find_package(gl_depth_sim REQUIRED)
 
     find_package(catkin REQUIRED COMPONENTS
          roscpp
@@ -61,6 +60,9 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
          yak::yak
          yak::yak_frontend
          yak::yak_marching_cubes)
+     target_include_directories(${PROJECT_NAME}_node PUBLIC
+         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+         "$<INSTALL_INTERFACE:include>")
      target_include_directories(${PROJECT_NAME}_node PUBLIC
        ${catkin_INCLUDE_DIRS}
        ${gl_depth_sim_INCLUDE_DIRS})

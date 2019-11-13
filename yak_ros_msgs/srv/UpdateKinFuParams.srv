@@ -1,0 +1,33 @@
+int32 NONE=0
+int32 COLS=1
+int32 ROWS=2
+int32 INTR=3
+int32 VOLUME_DIMS=4
+int32 VOLUME_RESOLUTION=5
+int32 VOLUME_POSE=6
+int32 BILATERAL_SIGMA_DEPTH=7
+int32 BILATERAL_SIGMA_SPATIAL=8
+int32 BILATERAL_KERNAL_SIZE=9
+int32 ICP_TRUNCATE_DEPTH_DIST=10
+int32 ICP_DIST_THRES=11
+int32 ICP_ANGLE_THRES=12
+int32 ICP_ITER_NUM=13
+int32 TSDF_MIN_CAMERA_MOVEMENT=14
+int32 TSDF_TRUNC_DIST=15
+int32 TSDF_MAX_WEIGHT=16
+int32 RAYCAST_STEP_FACTOR=17
+int32 GRADIENT_DELTA_FACTOR=18
+int32 LIGHT_POSE=19
+int32 USE_POSE_HINTS=20
+int32 USE_ICP=21
+int32 UPDATE_VIA_SENSOR_MOTION=22
+int32 ALL=100
+
+# This specifies which of the parameters given below should be updated. The rest will stay the same
+int32[] params_to_update
+
+# Fill out the parameters you want to change
+KinFuParams kinfu_params
+
+---
+bool success
