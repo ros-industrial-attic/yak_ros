@@ -29,7 +29,8 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
          roscpp
          tf2
          tf2_eigen
-         cv_bridge)
+         cv_bridge
+         yak_ros_msgs)
 
      catkin_package(
        INCLUDE_DIRS
@@ -42,6 +43,11 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
          ${tf2_eigen_LIBRARIES}
          ${cv_bridge_LIBRARIES}
        CATKIN_DEPENDS
+         cv_bridge
+         geometry_msgs
+         sensor_msgs
+         std_msgs
+         yak_ros_msgs
        DEPENDS
          yak
          tf2_eigen
