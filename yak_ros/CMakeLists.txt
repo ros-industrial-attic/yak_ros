@@ -14,7 +14,7 @@ find_package(yak REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(tf2 REQUIRED)
+#find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_eigen REQUIRED)
 find_package(cv_bridge REQUIRED)
@@ -28,6 +28,7 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
     find_package(catkin REQUIRED COMPONENTS
          roscpp
          tf2
+         tf2_ros
          tf2_eigen
          cv_bridge
          yak_ros_msgs)
@@ -73,6 +74,30 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
        ${catkin_INCLUDE_DIRS}
        ${gl_depth_sim_INCLUDE_DIRS})
 
+
+
+    if(DEFINED BUILD_DEMO)
+        find_package(gl_depth_sim REQUIRED)
+        find_package(image_transport REQUIRED)
+        add_executable(${PROJECT_NAME}_image_simulator
+          src/demo/sim_depth_image_pub_ros1.cpp)
+        target_link_libraries(${PROJECT_NAME}_image_simulator
+          ${CATKIN_LIBRARIES}
+          ${OpenCV_LIBS}
+          ${sensor_msgs_LIBRARIES}
+          ${cv_bridge_LIBRARIES}
+          ${gl_depth_sim_LIBRARIES}
+          ${image_transport_LIBRARIES}
+          Eigen3::Eigen)
+        target_include_directories(${PROJECT_NAME}_image_simulator PUBLIC
+          ${catkin_INCLUDE_DIRS}
+          ${gl_depth_sim_INCLUDE_DIRS}
+          ${image_transport_INCLUDE_DIRS}
+          ${sensor_msgs_INCLUDE_DIRS}
+        )
+    endif()
+
+
 else()
     # Build as an Ament package for ROS2
     find_package(ament_cmake REQUIRED)
@@ -116,10 +141,21 @@ endif()
 
 if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
     set(ROS_LIB_DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+    set(ROS_SHARE_DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 else()
     set(ROS_LIB_DESTINATION lib/${PROJECT_NAME})
+    set(ROS_SHARE_DESTINATION share/${PROJECT_NAME})
 endif()
 
 install(TARGETS ${PROJECT_NAME}_node
-        RUNTIME DESTINATION ${ROS_LIB_DESTINATION}
-        )
+        RUNTIME DESTINATION ${ROS_LIB_DESTINATION})
+
+install(DIRECTORY launch config demo
+        DESTINATION ${ROS_SHARE_DESTINATION})
+
+if (DEFINED BUILD_DEMO)
+    install(TARGETS ${PROJECT_NAME}_image_simulator
+            RUNTIME DESTINATION ${ROS_LIB_DESTINATION})
+endif()
+
+
