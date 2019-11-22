@@ -50,39 +50,49 @@ void OnlineFusionServer::onReceivedDepthImg(const sensor_msgs::ImageConstPtr& im
 {
   // Get the camera pose in the world frame at the time when the depth image was generated.
   ROS_DEBUG_STREAM("Got depth image");
+  image_queue_.push(image_in);
   geometry_msgs::TransformStamped transform_tsdf_frame_to_camera;
-  try
+  if (image_queue_.size() > 0)
   {
-    transform_tsdf_frame_to_camera =
-        tf_buffer_.lookupTransform(tsdf_frame_, image_in->header.frame_id, image_in->header.stamp);
+    try
+    {
+      sensor_msgs::ImageConstPtr next_image = image_queue_.front();
+      transform_tsdf_frame_to_camera =
+          tf_buffer_.lookupTransform(tsdf_frame_, next_image->header.frame_id, next_image->header.stamp);
+      image_queue_.pop();
+
+      Eigen::Affine3d tsdf_frame_to_camera = tf2::transformToEigen(transform_tsdf_frame_to_camera);
+
+      // Find how much the camera moved since the last depth image. If the magnitude of motion was below some threshold,
+      // abort integration. This is to prevent noise from accumulating in the isosurface due to numerous observations
+      // from the same pose.
+      std::double_t motion_mag = (tsdf_frame_to_camera.inverse() * tsdf_frame_to_camera_prev_).translation().norm();
+      ROS_DEBUG_STREAM(motion_mag);
+      if (motion_mag < DEFAULT_MINIMUM_TRANSLATION)
+      {
+        ROS_DEBUG_STREAM("Camera motion below threshold");
+        return;
+      }
+
+      cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(next_image, sensor_msgs::image_encodings::TYPE_16UC1);
+
+      // Integrate the depth image into the TSDF volume
+      if (!fusion_.fuse(cv_ptr->image, tsdf_frame_to_camera.cast<float>()))
+        ROS_WARN_STREAM("Failed to fuse image");
+
+      // If integration was successful, update the previous camera pose with the new camera pose
+      tsdf_frame_to_camera_prev_ = tsdf_frame_to_camera;
+    }
+    catch (tf2::TransformException& ex)
+    {
+      // Abort integration if tf lookup failed
+      ROS_WARN("%s", ex.what());
+      // Remove image if TF lookup failed because it is in the unknown past
+      if (std::string(ex.what()).find(std::string("past")) != std::string::npos)
+        image_queue_.pop();
+      return;
+    }
   }
-  catch (tf2::TransformException& ex)
-  {
-    // Abort integration if tf lookup failed
-    ROS_WARN("%s", ex.what());
-    return;
-  }
-  Eigen::Affine3d tsdf_frame_to_camera = tf2::transformToEigen(transform_tsdf_frame_to_camera);
-
-  // Find how much the camera moved since the last depth image. If the magnitude of motion was below some threshold,
-  // abort integration. This is to prevent noise from accumulating in the isosurface due to numerous observations from
-  // the same pose.
-  std::double_t motion_mag = (tsdf_frame_to_camera.inverse() * tsdf_frame_to_camera_prev_).translation().norm();
-  ROS_DEBUG_STREAM(motion_mag);
-  if (motion_mag < DEFAULT_MINIMUM_TRANSLATION)
-  {
-    ROS_DEBUG_STREAM("Camera motion below threshold");
-    return;
-  }
-
-  cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(image_in, sensor_msgs::image_encodings::TYPE_16UC1);
-
-  // Integrate the depth image into the TSDF volume
-  if (!fusion_.fuse(cv_ptr->image, tsdf_frame_to_camera.cast<float>()))
-    ROS_WARN_STREAM("Failed to fuse image");
-
-  // If integration was successful, update the previous camera pose with the new camera pose
-  tsdf_frame_to_camera_prev_ = tsdf_frame_to_camera;
   return;
 }
 

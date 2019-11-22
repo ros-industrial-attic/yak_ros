@@ -38,6 +38,8 @@
 #include <yak_ros_msgs/GenerateMesh.h>
 #include <yak_ros_msgs/UpdateKinFuParams.h>
 
+#include <queue>
+
 namespace yak_ros
 {
 /**
@@ -116,6 +118,9 @@ private:
   Eigen::Affine3d tsdf_frame_to_camera_prev_;
   /** @brief TF frame associated with the TSDF volume. */
   std::string tsdf_frame_;
+  /** @brief Queue that stores images until their transforms are available. This allows for the mismatch in timing
+   * between images being published and TFs */
+  std::queue<sensor_msgs::ImageConstPtr> image_queue_;
 };
 }  // namespace yak_ros
 
