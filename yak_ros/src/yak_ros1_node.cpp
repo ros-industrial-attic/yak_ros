@@ -31,6 +31,7 @@ OnlineFusionServer::OnlineFusionServer(ros::NodeHandle& nh,
   , robot_tform_listener_(tf_buffer_)
   , tsdf_frame_to_camera_prev_(Eigen::Affine3d::Identity())
   , tsdf_frame_(tsdf_frame)
+  , visualizer_(nh, tsdf_frame)
 {
   // Subscribe to depth images published on the topic named by the depth_topic param. Set up callback to integrate
   // images when received.
@@ -44,6 +45,14 @@ OnlineFusionServer::OnlineFusionServer(ros::NodeHandle& nh,
 
   // Advertise service to update the params
   update_params_service_ = nh.advertiseService("update_params", &OnlineFusionServer::onUpdateParams, this);
+
+  // Publish the TSDF Volume
+  visualizer_.setBoundingBox(0,
+                             0,
+                             0,
+                             params.volume_dims[0] * params.volume_resolution,
+                             params.volume_dims[1] * params.volume_resolution,
+                             params.volume_dims[2] * params.volume_resolution);
 }
 
 void OnlineFusionServer::onReceivedDepthImg(const sensor_msgs::ImageConstPtr& image_in)
@@ -117,6 +126,10 @@ bool OnlineFusionServer::onGenerateMesh(yak_ros_msgs::GenerateMeshRequest& req, 
   ROS_INFO_STREAM("Meshing done, saving ply as");
   pcl::io::savePLYFileBinary(filename, mesh);
 
+  // Publish mesh results
+  visualizer_.frame_id_ = req.results_frame;
+  visualizer_.setMeshResource(filename);
+
   ROS_INFO_STREAM("Saving done");
   res.success = true;
   return true;
@@ -127,6 +140,7 @@ bool OnlineFusionServer::onReset(std_srvs::TriggerRequest& req, std_srvs::Trigge
   (void)req;
   if (fusion_.reset())
   {
+    visualizer_.clearMesh();
     ROS_INFO_STREAM("TSDF volume has been reset");
     res.success = true;
     return true;
@@ -156,6 +170,13 @@ bool OnlineFusionServer::onUpdateParams(yak_ros_msgs::UpdateKinFuParamsRequest& 
   }
   else
   {
+    // Publish the TSDF Volume
+    visualizer_.setBoundingBox(0,
+                               0,
+                               0,
+                               params_.volume_dims[0] * params_.volume_resolution,
+                               params_.volume_dims[1] * params_.volume_resolution,
+                               params_.volume_dims[2] * params_.volume_resolution);
     ROS_INFO_STREAM("TSDF volume has been reset and " << req.params_to_update.size()
                                                       << " parameters have been updated.");
     res.success = true;

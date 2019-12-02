@@ -37,6 +37,7 @@
 #include <sensor_msgs/Image.h>
 #include <yak_ros_msgs/GenerateMesh.h>
 #include <yak_ros_msgs/UpdateKinFuParams.h>
+#include <yak_ros/visualizer_ros1.h>
 
 #include <queue>
 
@@ -121,6 +122,8 @@ private:
   /** @brief Queue that stores images until their transforms are available. This allows for the mismatch in timing
    * between images being published and TFs */
   std::queue<sensor_msgs::ImageConstPtr> image_queue_;
+  /** @brief Used to visualize results in rviz */
+  VisualizerRos1 visualizer_;
 };
 }  // namespace yak_ros
 
