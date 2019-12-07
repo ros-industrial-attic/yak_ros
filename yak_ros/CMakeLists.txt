@@ -14,6 +14,7 @@ find_package(yak REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 #find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_eigen REQUIRED)
@@ -48,11 +49,20 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
          geometry_msgs
          sensor_msgs
          std_msgs
+         visualization_msgs
          yak_ros_msgs
        DEPENDS
          yak
          tf2_eigen
          tf2)
+
+     add_library(${PROJECT_NAME}_visualizer_ros1 src/yak_ros1/visualizer_ros1.cpp)
+     add_dependencies(${PROJECT_NAME}_visualizer_ros1 ${catkin_EXPORTED_TARGETS})
+     target_link_libraries(${PROJECT_NAME}_visualizer_ros1 ${catkin_LIBRARIES})
+     target_include_directories(${PROJECT_NAME}_visualizer_ros1 PUBLIC
+         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+         "$<INSTALL_INTERFACE:include>")
+     target_include_directories(${PROJECT_NAME}_visualizer_ros1 PUBLIC ${catkin_INCLUDE_DIRS})
 
      add_executable(${PROJECT_NAME}_node
          src/yak_ros1_node.cpp)
@@ -66,7 +76,8 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
          ${cv_bridge_LIBRARIES}
          yak::yak
          yak::yak_frontend
-         yak::yak_marching_cubes)
+         yak::yak_marching_cubes
+         ${PROJECT_NAME}_visualizer_ros1)
      target_include_directories(${PROJECT_NAME}_node PUBLIC
          "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
          "$<INSTALL_INTERFACE:include>")
