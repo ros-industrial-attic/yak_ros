@@ -250,6 +250,7 @@ int main(int argc, char** argv)
   pnh.param<float>("volume_resolution", kinfu_params.volume_resolution, 0.002f);
   kinfu_params.volume_dims = cv::Vec3i(volume_x, volume_y, volume_z);
   ROS_INFO_STREAM("TSDF Volume Dimensions (Voxels): " << kinfu_params.volume_dims);
+  ROS_INFO_STREAM("TSDF Volume Resolution (m): " << kinfu_params.volume_resolution);
 
   // This is not settable via ROS. Change by moving TSDF frame in TF
   kinfu_params.volume_pose = Eigen::Affine3f::Identity();
