@@ -37,6 +37,9 @@ OnlineFusionServer::OnlineFusionServer(ros::NodeHandle& nh,
   // images when received.
   depth_image_raw_sub_ = nh.subscribe("input_depth_image", 1, &OnlineFusionServer::onReceivedDepthImg, this);
 
+  // Subscribe to point cloud
+  point_cloud_sub_ = nh.subscribe("input_point_cloud", 1, &OnlineFusionServer::onReceivedPointCloud, this);
+
   // Advertise service for marching cubes meshing
   generate_mesh_service_ = nh.advertiseService("generate_mesh", &OnlineFusionServer::onGenerateMesh, this);
 
@@ -53,6 +56,60 @@ OnlineFusionServer::OnlineFusionServer(ros::NodeHandle& nh,
                              params.volume_dims[0] * params.volume_resolution,
                              params.volume_dims[1] * params.volume_resolution,
                              params.volume_dims[2] * params.volume_resolution);
+}
+
+void OnlineFusionServer::onReceivedPointCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_in)
+{
+  if (cloud_in->height == 1)
+    ROS_ERROR("YAK_ROS only supports structured pointclouds. Cloud has not been integrated");
+  else
+  {
+    // Consolidate important parameters
+    const float centre_x = params_.intr.cx;
+    const float centre_y = params_.intr.cy;
+    const float focal_x = params_.intr.fx;
+    const float focal_y = params_.intr.fy;
+    const int image_height = cloud_in->height;
+    const int image_width = cloud_in->width;
+
+    // Convert to useful point cloud format
+    pcl::PCLPointCloud2 pcl_pc2;
+    pcl_conversions::toPCL(*cloud_in, pcl_pc2);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromPCLPointCloud2(pcl_pc2, *cloud);
+
+    // Convert to depth image
+    cv::Mat cv_image = cv::Mat(image_height, image_width, CV_32FC1, cv::Scalar(std::numeric_limits<float>::max()));
+    for (std::size_t i = 0; i < cloud->points.size(); i++)
+    {
+      if (cloud->points[i].z == cloud->points[i].z)
+      {
+        float z = cloud->points[i].z * 1000.0;
+        float u = (cloud->points[i].x * 1000.0 * focal_x) / z;
+        float v = (cloud->points[i].y * 1000.0 * focal_y) / z;
+        int pixel_pos_x = (int)(u + centre_x);
+        int pixel_pos_y = (int)(v + centre_y);
+
+        if (pixel_pos_x > (image_width - 1))
+        {
+          pixel_pos_x = image_width - 1;
+        }
+        if (pixel_pos_y > (image_height - 1))
+        {
+          pixel_pos_y = image_height - 1;
+        }
+        cv_image.at<float>(pixel_pos_y, pixel_pos_x) = z;
+      }
+    }
+
+    // Convert to message
+    cv_image.convertTo(cv_image, CV_16UC1);
+    sensor_msgs::ImagePtr output_image = cv_bridge::CvImage(std_msgs::Header(), "16UC1", cv_image).toImageMsg();
+    output_image->header = cloud_in->header;
+
+    // Send to depth image callback
+    onReceivedDepthImg(output_image);
+  }
 }
 
 void OnlineFusionServer::onReceivedDepthImg(const sensor_msgs::ImageConstPtr& image_in)

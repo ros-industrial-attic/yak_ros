@@ -35,6 +35,7 @@
 
 #include <std_srvs/Trigger.h>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <yak_ros_msgs/GenerateMesh.h>
 #include <yak_ros_msgs/UpdateKinFuParams.h>
 #include <yak_ros/visualizer_ros1.h>
@@ -59,6 +60,12 @@ public:
   OnlineFusionServer(ros::NodeHandle& nh, const kfusion::KinFuParams& params, const std::string& tsdf_frame);
 
 private:
+  /**
+   * @brief onReceivePointCloud - callback for integrating new structured pointcloud into the TSDF volume
+   * @param cloud_in - pointer to new point cloud
+   */
+  void onReceivedPointCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_in);
+
   /**
    * @brief onReceivedDepthImg - callback for integrating new depth images into the TSDF volume
    * @param image_in - pointer to new depth image
@@ -105,6 +112,11 @@ private:
 
   /** @brief Subscriber that listens to incoming unrectofied depth images */
   ros::Subscriber depth_image_raw_sub_;
+  /** @brief Subscriber that listens to incoming structured point clouds.
+
+  Note: Using depth images is prefered. This subscriber callback simply converts the point cloud to a depth image and
+  calls the depth subscriber callback. If both are available, this is unnecessary overhead*/
+  ros::Subscriber point_cloud_sub_;
   /** @brief Buffer used to store locations of the camera (*/
   tf2_ros::Buffer tf_buffer_;
   /** @brief Listener used to look up tranforms for the location of the camera */
