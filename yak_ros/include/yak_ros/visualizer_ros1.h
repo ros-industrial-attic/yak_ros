@@ -104,8 +104,10 @@ public:
   void setMeshResource(const std::string& mesh_resource);
   /** @brief Clears the mesh marker and stops mesh marker timer */
   void clearMesh();
-  /** @brief Frame with which the markers are associated */
-  std::string frame_id_;
+  /** @brief Frame with which the mesh markers are associated */
+  std::string mesh_frame_id_;
+  /** @brief Frame with which the bounding box markers are associated */
+  std::string bbox_frame_id_;
 
 private:
   /** @brief ROS timer callback to publish the bounding box */

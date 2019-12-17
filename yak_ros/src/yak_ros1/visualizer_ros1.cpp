@@ -20,7 +20,7 @@ static inline geometry_msgs::Point MakePoint(const double& x, const double& y, c
   return pnt;
 }
 
-VisualizerRos1::VisualizerRos1(const ros::NodeHandle& nh, const std::string& frame_id) : frame_id_(frame_id), nh_(nh)
+VisualizerRos1::VisualizerRos1(const ros::NodeHandle& nh, const std::string& bbox_frame_id) : bbox_frame_id_(bbox_frame_id), nh_(nh)
 {
   vis_publisher_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 0);
   mesh_timer_ =
@@ -44,7 +44,7 @@ void VisualizerRos1::setBoundingBox(const double& neg_x,
   bbox_.pos_x_ = pos_x;
   bbox_.pos_y_ = pos_y;
   bbox_.pos_z_ = pos_z;
-  bbox_.frame_ = frame_id_;
+  bbox_.frame_ = bbox_frame_id_;
 
   bbox_timer_.start();
 }
@@ -54,7 +54,7 @@ void VisualizerRos1::clearBoundingBox()
   bbox_timer_.stop();
   // Send delete
   visualization_msgs::Marker marker;
-  marker.header.frame_id = frame_id_;
+  marker.header.frame_id = bbox_frame_id_;
   marker.header.stamp = ros::Time::now();
   marker.ns = "yak_ros";
   marker.id = 1;
@@ -75,7 +75,7 @@ void VisualizerRos1::clearMesh()
   mesh_timer_.stop();
   // Send delete
   visualization_msgs::Marker marker;
-  marker.header.frame_id = frame_id_;
+  marker.header.frame_id = mesh_frame_id_;
   marker.header.stamp = ros::Time::now();
   marker.ns = "yak_ros";
   marker.id = 0;
@@ -88,7 +88,7 @@ void VisualizerRos1::clearMesh()
 void VisualizerRos1::publishBoundingBoxCallback(const ros::TimerEvent&)
 {
   visualization_msgs::Marker marker;
-  marker.header.frame_id = frame_id_;
+  marker.header.frame_id = bbox_frame_id_;
   marker.header.stamp = ros::Time::now();
   marker.ns = "yak_ros";
   marker.id = 1;
@@ -147,7 +147,7 @@ void VisualizerRos1::publishBoundingBoxCallback(const ros::TimerEvent&)
 void VisualizerRos1::publishMeshCallback(const ros::TimerEvent&)
 {
   visualization_msgs::Marker marker;
-  marker.header.frame_id = frame_id_;
+  marker.header.frame_id = mesh_frame_id_;
   marker.header.stamp = ros::Time::now();
   marker.ns = "yak_ros";
   marker.id = 0;
