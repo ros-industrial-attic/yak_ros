@@ -184,7 +184,7 @@ bool OnlineFusionServer::onGenerateMesh(yak_ros_msgs::GenerateMeshRequest& req, 
   pcl::io::savePLYFileBinary(filename, mesh);
 
   // Publish mesh results
-  visualizer_.frame_id_ = req.results_frame;
+  visualizer_.mesh_frame_id_ = req.results_frame;
   visualizer_.setMeshResource(filename);
 
   ROS_INFO_STREAM("Saving done");
