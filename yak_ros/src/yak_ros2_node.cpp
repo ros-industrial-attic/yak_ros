@@ -87,7 +87,7 @@ public:
         return;
     };
 
-    depth_image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(depth_topic, depth_image_cb);
+    depth_image_sub_ = node_->create_subscription<sensor_msgs::msg::Image>(depth_topic, 10, depth_image_cb);
 
     auto generate_mesh_cb =
             [this](const std::shared_ptr<rmw_request_id_t> request_header,
