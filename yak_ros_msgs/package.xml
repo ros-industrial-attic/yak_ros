@@ -8,11 +8,9 @@
   <license>Apache 2.0</license>
 
 
-  <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
-  <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <depend condition="$ROS_VERSION == 1">roscpp</depend>
-  <depend condition="$ROS_VERSION == 2">rclcpp</depend>
+  <depend>rclcpp</depend>
 
   <build_depend>geometry_msgs</build_depend>
   <build_export_depend>geometry_msgs</build_export_depend>
@@ -24,16 +22,14 @@
   <build_depend>std_msgs</build_depend>
   <build_export_depend>std_msgs</build_export_depend>
 
-  <build_depend condition="$ROS_VERSION == 2">builtin_interfaces</build_depend>
-  <build_depend condition="$ROS_VERSION == 2">rosidl_default_generators</build_depend>
-  <exec_depend condition="$ROS_VERSION == 2">builtin_interfaces</exec_depend>
-  <exec_depend condition="$ROS_VERSION == 2">rosidl_default_generators</exec_depend>
+  <build_depend>builtin_interfaces</build_depend>
+  <build_depend>rosidl_default_generators</build_depend>
+  <exec_depend>builtin_interfaces</exec_depend>
+  <exec_depend>rosidl_default_generators</exec_depend>
 
-  <member_of_group condition="$ROS_VERSION == 2">rosidl_interface_packages</member_of_group>
-
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>
-    <build_type condition="$ROS_VERSION == 1">catkin</build_type>
-    <build_type condition="$ROS_VERSION == 2">ament_cmake</build_type>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
