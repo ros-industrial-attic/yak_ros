@@ -1,0 +1,4 @@
+- git:
+    local-name: yak
+    uri: https://github.com/ros-industrial/yak.git
+    version: devel
