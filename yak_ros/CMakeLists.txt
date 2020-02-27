@@ -30,12 +30,15 @@ find_package(rclcpp REQUIRED)
 add_executable(${PROJECT_NAME}_node
     src/yak_ros2_node.cpp)
 
+target_compile_options(${PROJECT_NAME}_node PUBLIC -mno-avx)
+
 target_include_directories(${PROJECT_NAME}_node PUBLIC
   ${rclcpp_INCLUDE_DIRS})
 
 target_link_libraries(${PROJECT_NAME}_node
     ${rclcpp_LIBRARIES}
-    ${OpenCV_LIBS}
+    opencv_core
+    opencv_highgui
     yak::yak
     yak::yak_frontend
     yak::yak_marching_cubes
@@ -44,6 +47,29 @@ target_link_libraries(${PROJECT_NAME}_node
     ${tf2_ros_LIBRARIES}
     ${tf2_eigen_LIBRARIES}
     ${cv_bridge_LIBRARIES})
+
+if(DEFINED BUILD_DEMO)
+    find_package(gl_depth_sim REQUIRED)
+    find_package(image_transport REQUIRED)
+    add_executable(${PROJECT_NAME}_image_simulator
+      src/demo/sim_depth_image_pub_ros2.cpp)
+    target_include_directories(${PROJECT_NAME}_image_simulator PUBLIC
+      ${rclcpp_INCLUDE_DIRS}
+      ${image_transport_INCLUDE_DIRS}
+      ${sensor_msgs_INCLUDE_DIRS}
+      ${tf2_ros_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME}_image_simulator
+      ${rclcpp_LIBRARIES}
+      opencv_core
+      opencv_highgui
+      ${sensor_msgs_LIBRARIES}
+      ${cv_bridge_LIBRARIES}
+      ${image_transport_LIBRARIES}
+      ${tf2_ros_LIBRARIES}
+      Eigen3::Eigen
+      gl_depth_sim::gl_depth_sim
+      gl_depth_sim::gl_depth_sim_interfaces)
+endif()
 
 ament_target_dependencies(${PROJECT_NAME}_node
                           "rclcpp"
@@ -68,7 +94,7 @@ set(ROS_SHARE_DESTINATION share/${PROJECT_NAME})
 install(TARGETS ${PROJECT_NAME}_node
         RUNTIME DESTINATION ${ROS_LIB_DESTINATION})
 
-install(DIRECTORY launch config demo
+install(DIRECTORY launch demo
         DESTINATION ${ROS_SHARE_DESTINATION})
 
 if (DEFINED BUILD_DEMO)
