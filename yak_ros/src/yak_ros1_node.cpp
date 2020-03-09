@@ -61,61 +61,63 @@ OnlineFusionServer::OnlineFusionServer(ros::NodeHandle& nh,
 void OnlineFusionServer::onReceivedPointCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_in)
 {
   if (cloud_in->height == 1)
-    ROS_ERROR("YAK_ROS only supports structured pointclouds. Cloud has not been integrated");
-  else
   {
-    // Consolidate important parameters
-    const float centre_x = params_.intr.cx;
-    const float centre_y = params_.intr.cy;
-    const float focal_x = params_.intr.fx;
-    const float focal_y = params_.intr.fy;
-    const int image_height = cloud_in->height;
-    const int image_width = cloud_in->width;
-
-    // Convert to useful point cloud format
-    pcl::PCLPointCloud2 pcl_pc2;
-    pcl_conversions::toPCL(*cloud_in, pcl_pc2);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::fromPCLPointCloud2(pcl_pc2, *cloud);
-
-    // Convert to depth image
-    cv::Mat cv_image = cv::Mat(image_height, image_width, CV_32FC1, cv::Scalar(std::numeric_limits<float>::max()));
-    for (std::size_t i = 0; i < cloud->points.size(); i++)
-    {
-      if (cloud->points[i].z == cloud->points[i].z)
-      {
-        float z = cloud->points[i].z * 1000.0;
-        float u = (cloud->points[i].x * 1000.0 * focal_x) / z;
-        float v = (cloud->points[i].y * 1000.0 * focal_y) / z;
-        int pixel_pos_x = (int)(u + centre_x);
-        int pixel_pos_y = (int)(v + centre_y);
-
-        if (pixel_pos_x > (image_width - 1))
-        {
-          pixel_pos_x = image_width - 1;
-        }
-        if (pixel_pos_y > (image_height - 1))
-        {
-          pixel_pos_y = image_height - 1;
-        }
-        cv_image.at<float>(pixel_pos_y, pixel_pos_x) = z;
-      }
-    }
-
-    // Convert to message
-    cv_image.convertTo(cv_image, CV_16UC1);
-    sensor_msgs::ImagePtr output_image = cv_bridge::CvImage(std_msgs::Header(), "16UC1", cv_image).toImageMsg();
-    output_image->header = cloud_in->header;
-
-    // Send to depth image callback
-    onReceivedDepthImg(output_image);
+    ROS_ERROR("YAK_ROS only supports structured pointclouds. Cloud has not been integrated.");
+    return;
   }
+
+  // Consolidate important parameters
+  const float centre_x = params_.intr.cx;
+  const float centre_y = params_.intr.cy;
+  const float focal_x = params_.intr.fx;
+  const float focal_y = params_.intr.fy;
+  const int image_height = cloud_in->height;
+  const int image_width = cloud_in->width;
+
+  // Convert to useful point cloud format
+  pcl::PCLPointCloud2 pcl_pc2;
+  pcl_conversions::toPCL(*cloud_in, pcl_pc2);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::fromPCLPointCloud2(pcl_pc2, *cloud);
+
+  // Convert to depth image
+  cv::Mat cv_image = cv::Mat(image_height, image_width, CV_32FC1, cv::Scalar(std::numeric_limits<float>::max()));
+  for (std::size_t i = 0; i < cloud->points.size(); i++)
+  {
+    if (cloud->points[i].z == cloud->points[i].z)
+    {
+      float z = cloud->points[i].z * 1000.0;
+      float u = (cloud->points[i].x * 1000.0 * focal_x) / z;
+      float v = (cloud->points[i].y * 1000.0 * focal_y) / z;
+      int pixel_pos_x = (int)(u + centre_x);
+      int pixel_pos_y = (int)(v + centre_y);
+
+      if (pixel_pos_x > (image_width - 1))
+      {
+        pixel_pos_x = image_width - 1;
+      }
+      if (pixel_pos_y > (image_height - 1))
+      {
+        pixel_pos_y = image_height - 1;
+      }
+      cv_image.at<float>(pixel_pos_y, pixel_pos_x) = z;
+    }
+  }
+
+  // Convert to message
+  cv_image.convertTo(cv_image, CV_16UC1);
+  sensor_msgs::ImagePtr output_image = cv_bridge::CvImage(std_msgs::Header(), sensor_msgs::image_encodings::TYPE_16UC1, cv_image).toImageMsg();
+  output_image->header = cloud_in->header;
+
+  // Send to depth image callback
+  onReceivedDepthImg(output_image);
+
 }
 
 void OnlineFusionServer::onReceivedDepthImg(const sensor_msgs::ImageConstPtr& image_in)
 {
   // Get the camera pose in the world frame at the time when the depth image was generated.
-  ROS_DEBUG_STREAM("Got depth image");
+  ROS_DEBUG("Got depth image");
   image_queue_.push(image_in);
   geometry_msgs::TransformStamped transform_tsdf_frame_to_camera;
   if (image_queue_.size() > 0)
@@ -125,6 +127,9 @@ void OnlineFusionServer::onReceivedDepthImg(const sensor_msgs::ImageConstPtr& im
       sensor_msgs::ImageConstPtr next_image = image_queue_.front();
       transform_tsdf_frame_to_camera =
           tf_buffer_.lookupTransform(tsdf_frame_, next_image->header.frame_id, next_image->header.stamp);
+
+      ROS_DEBUG("Found valid transform between %s and %s", tsdf_frame_.c_str(), next_image->header.frame_id.c_str());
+
       image_queue_.pop();
 
       Eigen::Affine3d tsdf_frame_to_camera = tf2::transformToEigen(transform_tsdf_frame_to_camera);
@@ -133,26 +138,29 @@ void OnlineFusionServer::onReceivedDepthImg(const sensor_msgs::ImageConstPtr& im
       // abort integration. This is to prevent noise from accumulating in the isosurface due to numerous observations
       // from the same pose.
       std::double_t motion_mag = (tsdf_frame_to_camera.inverse() * tsdf_frame_to_camera_prev_).translation().norm();
-      ROS_DEBUG_STREAM(motion_mag);
+      ROS_DEBUG("Frame %s moved %f m since last image", next_image->header.frame_id.c_str(), motion_mag);
       if (motion_mag < DEFAULT_MINIMUM_TRANSLATION)
       {
-        ROS_DEBUG_STREAM("Camera motion below threshold");
+        ROS_DEBUG("Motion below threshold, image will not be fused");
         return;
       }
 
-      cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(next_image, sensor_msgs::image_encodings::TYPE_16UC1);
+      ROS_DEBUG("Image encoding is %s", next_image->encoding.c_str());
+      cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(next_image, next_image->encoding);
 
       // Integrate the depth image into the TSDF volume
       if (!fusion_.fuse(cv_ptr->image, tsdf_frame_to_camera.cast<float>()))
-        ROS_WARN_STREAM("Failed to fuse image");
+        ROS_ERROR("Failed to fuse image.");
 
       // If integration was successful, update the previous camera pose with the new camera pose
       tsdf_frame_to_camera_prev_ = tsdf_frame_to_camera;
+
+      ROS_DEBUG("Successfully fused image");
     }
     catch (tf2::TransformException& ex)
     {
       // Abort integration if tf lookup failed
-      ROS_WARN("%s", ex.what());
+      ROS_WARN("TF lookupTransform error: %s", ex.what());
       // Remove image if TF lookup failed because it is in the unknown past
       if (std::string(ex.what()).find(std::string("past")) != std::string::npos)
         image_queue_.pop();
@@ -165,7 +173,7 @@ void OnlineFusionServer::onReceivedDepthImg(const sensor_msgs::ImageConstPtr& im
 bool OnlineFusionServer::onGenerateMesh(yak_ros_msgs::GenerateMeshRequest& req, yak_ros_msgs::GenerateMeshResponse& res)
 {
   // Run marching cubes to mesh TSDF
-  ROS_INFO_STREAM("Beginning marching cubes meshing");
+  ROS_INFO("Beginning marching cubes meshing");
   yak::MarchingCubesParameters mc_params;
   mc_params.scale = static_cast<double>(params_.volume_resolution);
   pcl::PolygonMesh mesh = yak::marchingCubesCPU(fusion_.downloadTSDF(), mc_params);
@@ -180,14 +188,14 @@ bool OnlineFusionServer::onGenerateMesh(yak_ros_msgs::GenerateMeshRequest& req, 
   // Save the results to the appropriate directory
   std::string filename = req.results_dir + "/results_mesh.ply";
   res.results_path = filename;
-  ROS_INFO_STREAM("Meshing done, saving ply as");
+  ROS_INFO("Meshing done, saving to %s", filename.c_str());
   pcl::io::savePLYFileBinary(filename, mesh);
 
   // Publish mesh results
   visualizer_.mesh_frame_id_ = req.results_frame;
   visualizer_.setMeshResource(filename);
 
-  ROS_INFO_STREAM("Saving done");
+  ROS_DEBUG("Done saving output mesh");
   res.success = true;
   return true;
 }
@@ -198,13 +206,13 @@ bool OnlineFusionServer::onReset(std_srvs::TriggerRequest& req, std_srvs::Trigge
   if (fusion_.reset())
   {
     visualizer_.clearMesh();
-    ROS_INFO_STREAM("TSDF volume has been reset");
+    ROS_INFO("TSDF volume has been reset");
     res.success = true;
     return true;
   }
   else
   {
-    ROS_ERROR_STREAM("TSDF volume has not been reset");
+    ROS_ERROR("Failed to reset TSDF volume");
     res.success = false;
     return false;
   }
@@ -215,13 +223,14 @@ bool OnlineFusionServer::onUpdateParams(yak_ros_msgs::UpdateKinFuParamsRequest& 
 {
   if (!yak_ros::updateParams(params_, req))
   {
-    ROS_ERROR_STREAM("Update KinFuParams failed. TSDF volume has not been reset.");
+    ROS_ERROR("Update KinFuParams failed. TSDF volume has not been reset.");
     res.success = false;
     return false;
   }
+  ROS_DEBUG("Successfully updated kinfu params");
   if (!fusion_.resetWithNewParams(params_))
   {
-    ROS_ERROR_STREAM("Resetting Fusion Server Failed.");
+    ROS_ERROR("Resetting Fusion Server Failed.");
     res.success = false;
     return false;
   }
@@ -245,12 +254,12 @@ bool OnlineFusionServer::transformPolygonMesh(pcl::PolygonMesh& input_mesh, cons
 {
   if (!tf_buffer_._frameExists(input_mesh.header.frame_id))
   {
-    ROS_ERROR("Input mesh frame does not exist");
+    ROS_ERROR("Input mesh frame %s does not exist", input_mesh.header.frame_id.c_str());
     return false;
   }
   if (!tf_buffer_._frameExists(target_frame))
   {
-    ROS_ERROR("Target frame does not exist");
+    ROS_ERROR("Target frame %s does not exist", target_frame.c_str());
     return false;
   }
 
@@ -266,6 +275,7 @@ bool OnlineFusionServer::transformPolygonMesh(pcl::PolygonMesh& input_mesh, cons
   pcl::transformPointCloud(cloud, cloud, tsdf_to_target);
   pcl::toPCLPointCloud2(cloud, input_mesh.cloud);
   input_mesh.header.frame_id = target_frame;
+  return true;
 }
 
 /**
@@ -304,6 +314,12 @@ int main(int argc, char** argv)
   pnh.param<int>("volume_x", volume_x, 640);
   pnh.param<int>("volume_y", volume_y, 640);
   pnh.param<int>("volume_z", volume_z, 640);
+  if (volume_x % 32 != 0 || volume_y % 32 != 0 || volume_z % 32 != 0)
+  {
+    ROS_ERROR("Failed to initialize yak_ros node: Number of voxels in each dimension must be multiples of 32.");
+    return -1;
+  }
+
   pnh.param<float>("volume_resolution", kinfu_params.volume_resolution, 0.002f);
   kinfu_params.volume_dims = cv::Vec3i(volume_x, volume_y, volume_z);
   ROS_INFO_STREAM("TSDF Volume Dimensions (Voxels): " << kinfu_params.volume_dims);
