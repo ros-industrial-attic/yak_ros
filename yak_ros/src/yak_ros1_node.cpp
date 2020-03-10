@@ -287,7 +287,7 @@ int main(int argc, char** argv)
 
   std::string camera_info_topic = pnh.getNamespace() + "/" + DEFAULT_DEPTH_IMAGE_TOPIC + "/camera_info";
   ROS_DEBUG("Looking for CameraInfo msgs on topic %s", camera_info_topic.c_str());
-  auto camera_info = ros::topic::waitForMessage<sensor_msgs::CameraInfo>(camera_info_topic, ros::Duration(5.0));
+  auto camera_info = ros::topic::waitForMessage<sensor_msgs::CameraInfo>(camera_info_topic, ros::Duration(1.0));
   if (camera_info == nullptr)
   {
       ROS_WARN("Failed to find camera info topic. Loading intrinsics from parameters instead.");
