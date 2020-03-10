@@ -6,7 +6,7 @@
   <author email="Joseph.Schornak@SwRI.org">Joseph Schornak</author>
   <author>Jonathan Meyer</author>
   <maintainer email="Joseph.Schornak@SwRI.org">Joseph Schornak</maintainer>
-  <license>MIT</license>
+  <license>Apache 2.0</license>
 
   <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
   <buildtool_depend condition="$ROS_VERSION == 2">ament_cmake</buildtool_depend>
