@@ -8,12 +8,10 @@
 
 
   <node name="tsdf_node" pkg="yak_ros" type="yak_ros_node">
-    <remap from="~input_depth_image" to="/image"/>
+    <remap from="~input_depth_image/image" to="/sim_depth_camera/image"/>
+    <remap from="~input_depth_image/camera_info" to="/sim_depth_camera/camera_info"/>
 
     <param name="tsdf_frame" value="tsdf_origin"/>
-    <rosparam param="camera_matrix">[550.0, 0.0, 320.0, 0.0, 550.0, 240.0, 0.0, 0.0, 1.0]</rosparam>
-    <param name="cols" value="640"/>
-    <param name="rows" value="480"/>
 
     <param name="volume_resolution" value="0.001"/>
     <param name="volume_x" value="640"/>

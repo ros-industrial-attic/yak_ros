@@ -11,7 +11,7 @@
 
 #include <chrono>
 
-const static std::string DEFAULT_IMAGE_TOPIC = "image";
+const static std::string DEFAULT_IMAGE_TOPIC = "sim_depth_camera/image";
 
 static Eigen::Affine3d lookat(const Eigen::Vector3d& origin, const Eigen::Vector3d& eye, const Eigen::Vector3d& up)
 {
@@ -34,7 +34,7 @@ int main(int argc, char** argv)
 
   // Setup ROS interfaces
   image_transport::ImageTransport it(nh);
-  image_transport::Publisher image_pub = it.advertise(DEFAULT_IMAGE_TOPIC, 1);
+  image_transport::CameraPublisher image_pub = it.advertiseCamera(DEFAULT_IMAGE_TOPIC, 1);
 
   tf2_ros::TransformBroadcaster broadcaster;
 
@@ -69,14 +69,30 @@ int main(int argc, char** argv)
   }
 
   gl_depth_sim::CameraProperties props;
-  props.width = width;
-  props.height = height;
-  props.fx = focal_length;
-  props.fy = focal_length;
+  props.width = static_cast<int>(width);
+  props.height = static_cast<int>(height);
+  props.fx = static_cast<float>(focal_length);
+  props.fy = static_cast<float>(focal_length);
   props.cx = props.width / 2;
   props.cy = props.height / 2;
   props.z_near = 0.25;
   props.z_far = 10.0f;
+
+  sensor_msgs::CameraInfo::Ptr camera_info(new sensor_msgs::CameraInfo());
+  camera_info->width = static_cast<unsigned int>(width);
+  camera_info->height = static_cast<unsigned int>(height);
+  camera_info->distortion_model = "plumb_bob";
+  camera_info->D = std::vector<double>(5, 0.0);
+
+  camera_info->K[0] = static_cast<double>(props.fx);
+  camera_info->K[1] = 0.0;
+  camera_info->K[2] = static_cast<double>(props.cx);
+  camera_info->K[3] = 0.0;
+  camera_info->K[4] = static_cast<double>(props.fy);
+  camera_info->K[5] = static_cast<double>(props.cy);
+  camera_info->K[6] = 0.0;
+  camera_info->K[7] = 0.0;
+  camera_info->K[8] = 1.0;
 
   // Create the simulation
   gl_depth_sim::SimDepthCamera sim (props);
@@ -117,7 +133,8 @@ int main(int argc, char** argv)
     image.header.frame_id = camera_frame;
     image.encoding = sensor_msgs::image_encodings::TYPE_16UC1;
     image.image = cv_img;
-    image_pub.publish(image.toImageMsg());
+    camera_info->header = image.header;
+    image_pub.publish(image.toImageMsg(), camera_info);
 
     geometry_msgs::TransformStamped transform_stamped;
     transform_stamped.transform.translation.x = pose.translation().x();
