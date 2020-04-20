@@ -28,7 +28,7 @@ The yak_ros node provides 3 services and is a subscriber to 2 topics, which can 
 
 #### Topics
 
-1 `/yak_ros/input_depth_image`: Listener for published depth images.
+1. `/yak_ros/input_depth_image`: Listener for published depth images.
 2. `/yak_ros/input_point_cloud`: Listener for published point clouds.
 
 
