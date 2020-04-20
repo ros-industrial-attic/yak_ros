@@ -92,13 +92,9 @@ void OnlineFusionServer::onReceivedPointCloud(const sensor_msgs::PointCloud2Cons
       int pixel_pos_x = (int)(u + centre_x);
       int pixel_pos_y = (int)(v + centre_y);
 
-      if (pixel_pos_x > (image_width - 1))
+      if (pixel_pos_x > (image_width - 1) || pixel_pos_y > (image_height - 1))
       {
-        pixel_pos_x = image_width - 1;
-      }
-      if (pixel_pos_y > (image_height - 1))
-      {
-        pixel_pos_y = image_height - 1;
+        continue;
       }
       cv_image.at<float>(pixel_pos_y, pixel_pos_x) = z;
     }
