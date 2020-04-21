@@ -82,6 +82,7 @@ void OnlineFusionServer::onReceivedPointCloud(const sensor_msgs::PointCloud2Cons
 
   // Convert to depth image
   cv::Mat cv_image = cv::Mat(image_height, image_width, CV_32FC1, cv::Scalar(std::numeric_limits<float>::max()));
+  int pixel_outside_bounds = 0;
   for (std::size_t i = 0; i < cloud->points.size(); i++)
   {
     if (cloud->points[i].z == cloud->points[i].z)
@@ -94,10 +95,18 @@ void OnlineFusionServer::onReceivedPointCloud(const sensor_msgs::PointCloud2Cons
 
       if (pixel_pos_x < 0 || pixel_pos_y < 0 || pixel_pos_x > (image_width - 1) || pixel_pos_y > (image_height - 1))
       {
+        // Count the amount of points which were projected out of depth image bounds.
+        pixel_outside_bounds++;
         continue;
       }
       cv_image.at<float>(pixel_pos_y, pixel_pos_x) = z;
     }
+  }
+  if (pixel_outside_bounds != 0)
+  {
+      // Print warning if projected point is outside of image bounds
+      ROS_WARNING_STREAM("Discarded " << pixel_outside_bounds << " points because they were out of bounds. "
+                        << "Your camera matrix might be set incorrectly.");
   }
 
   // Convert to message
