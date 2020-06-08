@@ -105,7 +105,7 @@ void OnlineFusionServer::onReceivedPointCloud(const sensor_msgs::PointCloud2Cons
   if (pixel_outside_bounds != 0)
   {
       // Print warning if projected point is outside of image bounds
-      ROS_WARNING_STREAM("Discarded " << pixel_outside_bounds << " points because they were out of bounds. "
+      ROS_WARN_STREAM("Discarded " << pixel_outside_bounds << " points because they were out of bounds. "
                         << "Your camera matrix might be set incorrectly.");
   }
 
