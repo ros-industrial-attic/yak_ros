@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 4 * * *'
+
+jobs:
+  industrial_ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        env:
+          - {OS_NAME: ubuntu,
+             OS_CODE_NAME: bionic,
+             ROS_DISTRO: melodic,
+             ROSDEP_SKIP_KEYS: nvidia-cuda-dev,
+             BADGE: bionic,
+             UPSTREAM_CMAKE_ARGS: "-DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs/",
+             UPSTREAM_WORKSPACE: 'github:ros-industrial/yak#devel github:Jmeyer1292/gl_depth_sim#master',
+             TARGET_CMAKE_ARGS: "-DBUILD_DEMO=True",
+             DOCKER_PULL: false,
+             DOCKER_IMAGE: "schornakj/yak_ci:bionic-cuda10.2"}
+          - {OS_NAME: ubuntu,
+             OS_CODE_NAME: bionic,
+             ROS_DISTRO: melodic,
+             ROSDEP_SKIP_KEYS: nvidia-cuda-dev,
+             BADGE: bionic,
+             UPSTREAM_CMAKE_ARGS: "-DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs/",
+             UPSTREAM_WORKSPACE: 'github:ros-industrial/yak#devel github:Jmeyer1292/gl_depth_sim#master',
+             TARGET_CMAKE_ARGS: "-DBUILD_DEMO=True",
+             DOCKER_PULL: false,
+             DOCKER_IMAGE: "schornakj/yak_ci:bionic-cuda9.2"}
+          - {OS_NAME: ubuntu,
+             OS_CODE_NAME: xenial,
+             ROS_DISTRO: kinetic,
+             ROSDEP_SKIP_KEYS: nvidia-cuda-dev libpcl-all-dev pcl_ros,
+             BADGE: xenial,
+             ADDITIONAL_DEBS: ros-kinetic-opencv3,
+             UPSTREAM_CMAKE_ARGS: "-DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs/",
+             UPSTREAM_WORKSPACE: 'github:ros-industrial/yak#devel github:ros-perception/perception_pcl#kinetic-devel github:Jmeyer1292/gl_depth_sim#master',
+             TARGET_CMAKE_ARGS: "-DBUILD_DEMO=True",
+             DOCKER_PULL: false,
+             DOCKER_IMAGE: "schornakj/yak-1:xenial-cuda10.2"}
+          - {OS_NAME: ubuntu,
+             OS_CODE_NAME: xenial,
+             ROS_DISTRO: kinetic,
+             ROSDEP_SKIP_KEYS: nvidia-cuda-dev libpcl-all-dev pcl_ros,
+             BADGE: xenial,
+             ADDITIONAL_DEBS: ros-kinetic-opencv3,
+             UPSTREAM_CMAKE_ARGS: "-DCMAKE_LIBRARY_PATH=/usr/local/cuda/lib64/stubs/",
+             UPSTREAM_WORKSPACE: 'github:ros-industrial/yak#devel github:ros-perception/perception_pcl#kinetic-devel github:Jmeyer1292/gl_depth_sim#master',
+             TARGET_CMAKE_ARGS: "-DBUILD_DEMO=True",
+             DOCKER_PULL: false,
+             DOCKER_IMAGE: "schornakj/yak-1:xenial-cuda9.2"}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: 'ros-industrial/industrial_ci@master'
+        env: ${{matrix.env}}
