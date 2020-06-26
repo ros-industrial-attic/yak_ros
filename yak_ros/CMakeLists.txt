@@ -21,13 +21,13 @@ find_package(tf2_eigen REQUIRED)
 find_package(cv_bridge REQUIRED)
 
 find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED COMPONENTS core highgui)
 
 if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
     # Build as a Catkin package for ROS
 
     find_package(catkin REQUIRED COMPONENTS
          roscpp
+         pcl_ros
          tf2
          tf2_ros
          tf2_eigen
@@ -37,7 +37,6 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
      catkin_package(
        INCLUDE_DIRS
        LIBRARIES
-         ${OpenCV_LIBS}
          ${yak_LIBRARIES}
          ${sensor_msgs_LIBRARIES}
          ${tf2_LIBRARIES}
@@ -47,6 +46,7 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
        CATKIN_DEPENDS
          cv_bridge
          geometry_msgs
+         pcl_ros
          sensor_msgs
          std_msgs
          visualization_msgs
@@ -68,7 +68,6 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
          src/yak_ros1_node.cpp)
      target_link_libraries(${PROJECT_NAME}_node
          ${CATKIN_LIBRARIES}
-         ${OpenCV_LIBS}
          ${sensor_msgs_LIBRARIES}
          ${tf2_LIBRARIES}
          ${tf2_ros_LIBRARIES}
@@ -94,7 +93,6 @@ if ($ENV{ROS_VERSION} VERSION_EQUAL "1")
           src/demo/sim_depth_image_pub_ros1.cpp)
         target_link_libraries(${PROJECT_NAME}_image_simulator
           ${CATKIN_LIBRARIES}
-          ${OpenCV_LIBS}
           ${sensor_msgs_LIBRARIES}
           ${cv_bridge_LIBRARIES}
           ${gl_depth_sim_LIBRARIES}
@@ -122,7 +120,6 @@ else()
 
     target_link_libraries(${PROJECT_NAME}_node
         ${rclcpp_LIBRARIES}
-        ${OpenCV_LIBS}
         yak::yak
         yak::yak_frontend
         yak::yak_marching_cubes
@@ -161,7 +158,7 @@ endif()
 install(TARGETS ${PROJECT_NAME}_node
         RUNTIME DESTINATION ${ROS_LIB_DESTINATION})
 
-install(DIRECTORY launch config demo
+install(DIRECTORY launch demo
         DESTINATION ${ROS_SHARE_DESTINATION})
 
 if (DEFINED BUILD_DEMO)

@@ -17,7 +17,6 @@
 
   <depend>libpcl-all-dev</depend>
   <depend>eigen</depend>
-  <depend>libopencv-dev</depend>
   <depend>yak</depend>
   <depend>yak_ros_msgs</depend>
 
@@ -31,9 +30,10 @@
   <depend>tf2_ros</depend>
   <depend>tf2_eigen</depend>
 
+  <depend>pcl_ros</depend>
   <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
   <depend condition="$BUILD_DEMO == True">gl_depth_sim</depend>
-  <depend condition="$BUILD_DEMO == True">image_transport</depend>
 
   <export>
     <build_type condition="$ROS_VERSION == 1">catkin</build_type>
