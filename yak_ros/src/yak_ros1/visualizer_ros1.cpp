@@ -20,7 +20,8 @@ static inline geometry_msgs::Point MakePoint(const double& x, const double& y, c
   return pnt;
 }
 
-VisualizerRos1::VisualizerRos1(const ros::NodeHandle& nh, const std::string& bbox_frame_id) : bbox_frame_id_(bbox_frame_id), nh_(nh)
+VisualizerRos1::VisualizerRos1(const ros::NodeHandle& nh, const std::string& bbox_frame_id)
+  : bbox_frame_id_(bbox_frame_id), nh_(nh)
 {
   vis_publisher_ = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 0);
   mesh_timer_ =
