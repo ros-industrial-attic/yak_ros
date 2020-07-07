@@ -104,19 +104,19 @@ void OnlineFusionServer::onReceivedPointCloud(const sensor_msgs::PointCloud2Cons
   }
   if (pixel_outside_bounds != 0)
   {
-      // Print warning if projected point is outside of image bounds
-      ROS_WARN_STREAM("Discarded " << pixel_outside_bounds << " points because they were out of bounds. "
-                        << "Your camera matrix might be set incorrectly.");
+    // Print warning if projected point is outside of image bounds
+    ROS_WARN_STREAM("Discarded " << pixel_outside_bounds << " points because they were out of bounds. "
+                                 << "Your camera matrix might be set incorrectly.");
   }
 
   // Convert to message
   cv_image.convertTo(cv_image, CV_16UC1);
-  sensor_msgs::ImagePtr output_image = cv_bridge::CvImage(std_msgs::Header(), sensor_msgs::image_encodings::TYPE_16UC1, cv_image).toImageMsg();
+  sensor_msgs::ImagePtr output_image =
+      cv_bridge::CvImage(std_msgs::Header(), sensor_msgs::image_encodings::TYPE_16UC1, cv_image).toImageMsg();
   output_image->header = cloud_in->header;
 
   // Send to depth image callback
   onReceivedDepthImg(output_image);
-
 }
 
 void OnlineFusionServer::onReceivedDepthImg(const sensor_msgs::ImageConstPtr& image_in)

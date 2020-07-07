@@ -30,7 +30,7 @@ static Eigen::Isometry3d lookat(const Eigen::Vector3d& origin, const Eigen::Vect
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "image_simulator_node");
-  ros::NodeHandle nh, pnh ("~");
+  ros::NodeHandle nh, pnh("~");
 
   // Setup ROS interfaces
   image_transport::ImageTransport it(nh);
@@ -51,7 +51,6 @@ int main(int argc, char** argv)
 
   double orbit_speed = pnh.param<double>("orbit_speed", 1.0);
   double framerate = pnh.param<double>("framerate", 30.0);
-
 
   double radius = pnh.param<double>("radius", 0.5);
   double z = pnh.param<double>("z", 0.5);
@@ -79,7 +78,7 @@ int main(int argc, char** argv)
   props.z_far = 10.0f;
 
   // Create the simulation
-  gl_depth_sim::SimDepthCamera sim (props);
+  gl_depth_sim::SimDepthCamera sim(props);
   sim.add(*mesh_ptr, Eigen::Isometry3d::Identity());
 
   // State for FPS monitoring
@@ -93,13 +92,11 @@ int main(int argc, char** argv)
   {
     double dt = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
 
-    Eigen::Vector3d camera_pos (radius * cos(dt * orbit_speed),
-                                radius * sin(dt * orbit_speed),
-                                z);
+    Eigen::Vector3d camera_pos(radius * cos(dt * orbit_speed), radius * sin(dt * orbit_speed), z);
 
-    Eigen::Vector3d look_at (0,0,0);
+    Eigen::Vector3d look_at(0, 0, 0);
 
-    const auto pose = lookat(camera_pos, look_at, Eigen::Vector3d(0,0,1));
+    const auto pose = lookat(camera_pos, look_at, Eigen::Vector3d(0, 0, 1));
 
     const auto depth_img = sim.render(pose);
 
