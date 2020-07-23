@@ -1,0 +1,4 @@
+- git:
+    local-name: gl_depth_sim
+    uri: https://github.com/Jmeyer1292/gl_depth_sim.git
+    version: master
