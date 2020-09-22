@@ -9,6 +9,7 @@
 #include <pcl/common/transforms.h>
 
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <cv_bridge/cv_bridge.h>
@@ -22,6 +23,7 @@
 using namespace yak_ros;
 
 static const std::double_t DEFAULT_MINIMUM_TRANSLATION = 0.00001;
+static const std::string DEFAULT_DEPTH_IMAGE_TOPIC = "input_depth_image";
 
 OnlineFusionServer::OnlineFusionServer(ros::NodeHandle& nh,
                                        const kfusion::KinFuParams& params,
@@ -35,7 +37,7 @@ OnlineFusionServer::OnlineFusionServer(ros::NodeHandle& nh,
 {
   // Subscribe to depth images published on the topic named by the depth_topic param. Set up callback to integrate
   // images when received.
-  depth_image_raw_sub_ = nh.subscribe("input_depth_image", 1, &OnlineFusionServer::onReceivedDepthImg, this);
+  depth_image_raw_sub_ = nh.subscribe(DEFAULT_DEPTH_IMAGE_TOPIC + "/image", 1, &OnlineFusionServer::onReceivedDepthImg, this);
 
   // Subscribe to point cloud
   point_cloud_sub_ = nh.subscribe("input_point_cloud", 1, &OnlineFusionServer::onReceivedPointCloud, this);
@@ -296,18 +298,38 @@ int main(int argc, char** argv)
 
   kfusion::KinFuParams kinfu_params = kfusion::KinFuParams::default_params();
 
-  // Size of the input image
-  pnh.param<int>("cols", kinfu_params.cols, 640);
-  pnh.param<int>("rows", kinfu_params.rows, 480);
 
-  // Get camera intrinsics from params
-  XmlRpc::XmlRpcValue camera_matrix;
-  pnh.getParam("camera_matrix", camera_matrix);
-  kinfu_params.intr.fx = static_cast<float>(static_cast<double>(camera_matrix[0]));
-  kinfu_params.intr.fy = static_cast<float>(static_cast<double>(camera_matrix[4]));
-  kinfu_params.intr.cx = static_cast<float>(static_cast<double>(camera_matrix[2]));
-  kinfu_params.intr.cy = static_cast<float>(static_cast<double>(camera_matrix[5]));
-  ROS_INFO("Camera Intr Params: %f %f %f %f\n",
+
+  std::string camera_info_topic = pnh.getNamespace() + "/" + DEFAULT_DEPTH_IMAGE_TOPIC + "/camera_info";
+  ROS_DEBUG("Looking for CameraInfo msgs on topic %s", camera_info_topic.c_str());
+  auto camera_info = ros::topic::waitForMessage<sensor_msgs::CameraInfo>(camera_info_topic, ros::Duration(1.0));
+  if (camera_info == nullptr)
+  {
+      ROS_WARN("Failed to find camera info topic. Loading intrinsics from parameters instead.");
+      // Get camera intrinsics from params
+      XmlRpc::XmlRpcValue camera_matrix;
+      pnh.getParam("camera_matrix", camera_matrix);
+      kinfu_params.intr.fx = static_cast<float>(static_cast<double>(camera_matrix[0]));
+      kinfu_params.intr.fy = static_cast<float>(static_cast<double>(camera_matrix[4]));
+      kinfu_params.intr.cx = static_cast<float>(static_cast<double>(camera_matrix[2]));
+      kinfu_params.intr.cy = static_cast<float>(static_cast<double>(camera_matrix[5]));
+
+      pnh.param<int>("cols", kinfu_params.cols, 640);
+      pnh.param<int>("rows", kinfu_params.rows, 480);
+  }
+  else
+  {
+      ROS_DEBUG("Found CameraInfo msg");
+      kinfu_params.intr.fx = static_cast<float>(camera_info->K[0]);
+      kinfu_params.intr.fy = static_cast<float>(camera_info->K[4]);
+      kinfu_params.intr.cx = static_cast<float>(camera_info->K[2]);
+      kinfu_params.intr.cy = static_cast<float>(camera_info->K[5]);
+
+      kinfu_params.cols = static_cast<int>(camera_info->width);
+      kinfu_params.rows = static_cast<int>(camera_info->height);
+  }
+
+  ROS_INFO("Camera Intrinsic Params: %f %f %f %f\n",
            static_cast<double>(kinfu_params.intr.fx),
            static_cast<double>(kinfu_params.intr.fy),
            static_cast<double>(kinfu_params.intr.cx),
