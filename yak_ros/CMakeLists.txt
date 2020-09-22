@@ -48,7 +48,7 @@ find_package(catkin REQUIRED COMPONENTS
      tf2_eigen
      tf2)
 
- add_library(${PROJECT_NAME}_visualizer_ros1 src/yak_ros1/visualizer_ros1.cpp)
+ add_library(${PROJECT_NAME}_visualizer_ros1 src/visualizer.cpp)
  add_dependencies(${PROJECT_NAME}_visualizer_ros1 ${catkin_EXPORTED_TARGETS})
  target_link_libraries(${PROJECT_NAME}_visualizer_ros1 ${catkin_LIBRARIES})
  target_include_directories(${PROJECT_NAME}_visualizer_ros1 PUBLIC
@@ -57,7 +57,7 @@ find_package(catkin REQUIRED COMPONENTS
  target_include_directories(${PROJECT_NAME}_visualizer_ros1 PUBLIC ${catkin_INCLUDE_DIRS})
 
  add_executable(${PROJECT_NAME}_node
-     src/yak_ros1_node.cpp)
+     src/yak_node.cpp)
  target_include_directories(${PROJECT_NAME}_node PUBLIC
      "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
      "$<INSTALL_INTERFACE:include>")
@@ -79,7 +79,7 @@ if(BUILD_DEMO)
     find_package(gl_depth_sim REQUIRED)
     find_package(image_transport REQUIRED)
     add_executable(${PROJECT_NAME}_image_simulator
-      src/demo/sim_depth_image_pub_ros1.cpp)
+      src/demo/sim_depth_image_pub.cpp)
     target_include_directories(${PROJECT_NAME}_image_simulator PUBLIC
       ${catkin_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME}_image_simulator
