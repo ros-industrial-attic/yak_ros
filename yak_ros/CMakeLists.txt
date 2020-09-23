@@ -81,12 +81,13 @@ if(BUILD_DEMO)
     add_executable(${PROJECT_NAME}_image_simulator
       src/demo/sim_depth_image_pub.cpp)
     target_include_directories(${PROJECT_NAME}_image_simulator PUBLIC
-      ${catkin_INCLUDE_DIRS})
+      ${catkin_INCLUDE_DIRS}
+      ${gl_depth_sim_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME}_image_simulator
       ${CATKIN_LIBRARIES}
       ${sensor_msgs_LIBRARIES}
       ${cv_bridge_LIBRARIES}
-      gl_depth_sim::gl_depth_sim_interfaces
+      ${gl_depth_sim_LIBRARIES}
       ${image_transport_LIBRARIES}
       ${tf2_ros_LIBRARIES}
       Eigen3::Eigen)
