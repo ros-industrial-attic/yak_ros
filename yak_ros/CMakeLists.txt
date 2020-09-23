@@ -48,13 +48,13 @@ find_package(catkin REQUIRED COMPONENTS
      tf2_eigen
      tf2)
 
- add_library(${PROJECT_NAME}_visualizer_ros1 src/visualizer.cpp)
- add_dependencies(${PROJECT_NAME}_visualizer_ros1 ${catkin_EXPORTED_TARGETS})
- target_link_libraries(${PROJECT_NAME}_visualizer_ros1 ${catkin_LIBRARIES})
- target_include_directories(${PROJECT_NAME}_visualizer_ros1 PUBLIC
+ add_library(${PROJECT_NAME}_visualizer src/visualizer.cpp)
+ add_dependencies(${PROJECT_NAME}_visualizer ${catkin_EXPORTED_TARGETS})
+ target_link_libraries(${PROJECT_NAME}_visualizer ${catkin_LIBRARIES})
+ target_include_directories(${PROJECT_NAME}_visualizer PUBLIC
      "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
      "$<INSTALL_INTERFACE:include>")
- target_include_directories(${PROJECT_NAME}_visualizer_ros1 PUBLIC ${catkin_INCLUDE_DIRS})
+ target_include_directories(${PROJECT_NAME}_visualizer PUBLIC ${catkin_INCLUDE_DIRS})
 
  add_executable(${PROJECT_NAME}_node
      src/yak_node.cpp)
@@ -73,7 +73,7 @@ find_package(catkin REQUIRED COMPONENTS
      yak::yak
      yak::yak_frontend
      yak::yak_marching_cubes
-     ${PROJECT_NAME}_visualizer_ros1)
+     ${PROJECT_NAME}_visualizer)
 
 if(BUILD_DEMO)
     find_package(gl_depth_sim REQUIRED)
@@ -93,7 +93,7 @@ if(BUILD_DEMO)
       Eigen3::Eigen)
 endif()
 
-install(TARGETS ${PROJECT_NAME}_node ${PROJECT_NAME}_visualizer_ros1
+install(TARGETS ${PROJECT_NAME}_node ${PROJECT_NAME}_visualizer
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
