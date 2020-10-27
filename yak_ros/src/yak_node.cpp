@@ -181,6 +181,7 @@ bool OnlineFusionServer::onGenerateMesh(yak_ros_msgs::GenerateMeshRequest& req, 
   ROS_INFO("Beginning marching cubes meshing");
   yak::MarchingCubesParameters mc_params;
   mc_params.scale = static_cast<double>(params_.volume_resolution);
+  mc_params.clean = true;
   pcl::PolygonMesh mesh = yak::marchingCubesCPU(fusion_.downloadTSDF(), mc_params);
   mesh.header.frame_id = tsdf_frame_;
   pcl_conversions::toPCL(ros::Time::now(), mesh.header.stamp);
