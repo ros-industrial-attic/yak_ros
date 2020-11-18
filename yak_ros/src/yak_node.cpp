@@ -50,12 +50,18 @@ OnlineFusionServer::OnlineFusionServer(ros::NodeHandle& nh,
   update_params_service_ = nh.advertiseService("update_params", &OnlineFusionServer::onUpdateParams, this);
 
   // Publish the TSDF Volume
-  visualizer_.setBoundingBox(0,
-                             0,
-                             0,
-                             params.volume_dims[0] * params.volume_resolution,
-                             params.volume_dims[1] * params.volume_resolution,
-                             params.volume_dims[2] * params.volume_resolution);
+  cv::Vec3f neg = params_.volume_pose.translation();
+  cv::Vec3f pos = params_.volume_pose.translation() +  cv::Vec3f(params_.volume_dims[0] * params_.volume_resolution, params_.volume_dims[1] * params_.volume_resolution,params_.volume_dims[2] * params_.volume_resolution);
+
+  // Publish the TSDF Volume
+  visualizer_.setBoundingBox(neg[0],
+                             neg[1],
+                             neg[2],
+                             pos[0],
+                             pos[1],
+                             pos[2]);
+
+  fusion_.resetWithNewParams(params);
 }
 
 void OnlineFusionServer::onReceivedPointCloud(const sensor_msgs::PointCloud2ConstPtr& cloud_in)
@@ -242,13 +248,17 @@ bool OnlineFusionServer::onUpdateParams(yak_ros_msgs::UpdateKinFuParamsRequest& 
   }
   else
   {
+    cv::Vec3f neg = params_.volume_pose.translation();
+    cv::Vec3f pos = params_.volume_pose.translation() + cv::Vec3f(params_.volume_dims[0] * params_.volume_resolution, params_.volume_dims[1] * params_.volume_resolution,params_.volume_dims[2] * params_.volume_resolution);
+
     // Publish the TSDF Volume
-    visualizer_.setBoundingBox(0,
-                               0,
-                               0,
-                               params_.volume_dims[0] * params_.volume_resolution,
-                               params_.volume_dims[1] * params_.volume_resolution,
-                               params_.volume_dims[2] * params_.volume_resolution);
+    visualizer_.setBoundingBox(neg[0],
+                               neg[1],
+                               neg[2],
+                               pos[0],
+                               pos[1],
+                               pos[2]);
+
     ROS_INFO_STREAM("TSDF volume has been reset and " << req.params_to_update.size()
                                                       << " parameters have been updated.");
     res.success = true;
@@ -273,7 +283,7 @@ bool OnlineFusionServer::transformPolygonMesh(pcl::PolygonMesh& input_mesh, cons
   ros::Time stamp;
   pcl_conversions::fromPCL(input_mesh.header.stamp, stamp);
   auto tsdf_to_target_tf = tf_buffer_.lookupTransform(target_frame, input_mesh.header.frame_id, stamp);
-  Eigen::Affine3d tsdf_to_target = tf2::transformToEigen(tsdf_to_target_tf);
+  Eigen::Affine3d tsdf_to_target = tf2::transformToEigen(tsdf_to_target_tf).translate(Eigen::Vector3d(params_.volume_pose.translation()[0],params_.volume_pose.translation()[1],params_.volume_pose.translation()[2]));
 
   // Tranform the point cloud to the correct frame
   pcl::PointCloud<pcl::PointXYZ> cloud;

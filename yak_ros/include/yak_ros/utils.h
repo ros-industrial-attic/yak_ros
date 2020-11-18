@@ -27,7 +27,8 @@
 #define YAK_ROS_UTILS_H
 #include <yak/kfusion/kinfu.hpp>
 #include <yak_ros_msgs/UpdateKinFuParamsRequest.h>
-
+#include <eigen_conversions/eigen_msg.h>
+#include <opencv2/core/eigen.hpp>
 namespace yak_ros
 {
 /**
@@ -69,8 +70,11 @@ bool updateParams(kfusion::KinFuParams& params, yak_ros_msgs::UpdateKinFuParamsR
     }
     else if (param == request.VOLUME_POSE)
     {
-      // I think it is a bad idea to let people change this.
-      return false;
+      Eigen::Isometry3d mid;
+      tf::poseMsgToEigen(request.kinfu_params.volume_pose, mid);
+      params.volume_pose= cv::Affine3f::Identity().translate(cv::Vec3f(mid.translation().x(), mid.translation().y(), mid.translation().z()));
+//      cv::eigen2cv(mid.matrix(),why);
+//      params.volume_pose.matrix = why;
     }
     else if (param == request.BILATERAL_SIGMA_DEPTH)
     {
