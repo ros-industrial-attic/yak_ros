@@ -11,6 +11,7 @@
 
   <depend>roscpp</depend>
 
+  <depend>eigen_conversions</depend>
   <build_depend>geometry_msgs</build_depend>
   <build_export_depend>geometry_msgs</build_export_depend>
 

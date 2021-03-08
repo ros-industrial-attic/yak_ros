@@ -19,6 +19,7 @@ find_package(Eigen3 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
      roscpp
+     eigen_conversions
      pcl_ros
      tf2
      tf2_ros
@@ -37,6 +38,7 @@ find_package(catkin REQUIRED COMPONENTS
      ${cv_bridge_LIBRARIES}
    CATKIN_DEPENDS
      cv_bridge
+     eigen_conversions
      geometry_msgs
      pcl_ros
      sensor_msgs
